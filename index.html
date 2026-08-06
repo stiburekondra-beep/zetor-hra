@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Zetor 25 na Podluží</title>
+<title>Traktory na Podluží</title>
 <style>
 /* ---------- základ ---------- */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -18,9 +18,12 @@ html,body{margin:0;height:100%;overflow:hidden;
   font-size:19px;width:42px;height:36px;border-radius:9px;cursor:pointer}
 
 /* ---------- scéna ---------- */
+/* `safe center` místo `center`: když je obsah vyšší než scéna (dlouhý příběh
+   na telefonu naležato), obyčejné centrování ořízne horní okraj a nejde
+   k němu doscrollovat — safe v tom případě zarovná na začátek. */
 #stage{flex:1 1 auto;position:relative;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:1.6vh;padding:1.6vh 3vw;
-  min-height:0;overflow-y:auto}
+  align-items:center;justify-content:center;justify-content:safe center;
+  gap:1.6vh;padding:1.6vh 3vw;min-height:0;overflow-y:auto}
 .zadani{font-size:clamp(17px,2.8vw,28px);font-weight:800;letter-spacing:1.5px;
   text-align:center;line-height:1.35;color:#182833;max-width:24ch;
   text-shadow:0 1px 0 rgba(255,255,255,.55)}
@@ -56,18 +59,35 @@ html,body{margin:0;height:100%;overflow:hidden;
 .pismeno:active{transform:translateY(3px);box-shadow:0 1px 0 #c9b98f}
 .pismeno.pryc{visibility:hidden}
 
-/* ---------- počty ---------- */
+/* ---------- počty (výběr ze 3) ---------- */
 .priklad{font-size:clamp(30px,6vw,62px);font-weight:900;letter-spacing:4px;
   background:rgba(255,255,255,.88);padding:8px 28px;border-radius:16px}
 
-/* ---------- SVG plocha ---------- */
-.plocha{width:100%;max-width:min(96vw,940px);flex:0 0 auto;min-height:0}
-/* background = barva oblohy: když max-height zmenší svg, vzniknou po stranách
-   prázdné pásy (letterbox) a bez toho by svítily jako světlý rám */
-.plocha svg{width:100%;height:auto;max-height:48vh;display:block;background:#9ccdec;
+/* ---------- počty (napiš sám) ---------- */
+.vstup-wrap{display:flex;justify-content:center}
+.vstup{min-width:74px;min-height:56px;padding:6px 16px;border-radius:12px;background:#fffdf6;
+  box-shadow:0 4px 0 #c9b98f;font-size:clamp(26px,4.4vw,40px);font-weight:900;color:#20303c;
+  display:flex;align-items:center;justify-content:center}
+.vstup.dobre{background:#bff0b4}
+.vstup.spatne{animation:tresk .4s;background:#ffd9d4}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:280px;width:100%}
+.cislo{font-family:inherit;font-size:clamp(20px,3.4vw,28px);font-weight:900;padding:12px 0;
+  border:0;border-radius:12px;background:#fffdf6;box-shadow:0 4px 0 #c9b98f;cursor:pointer;color:#20303c}
+.cislo:active{transform:translateY(3px);box-shadow:0 1px 0 #c9b98f}
+.cislo.ok{background:#8fd67e;color:#173b0f}
+.cislo.smaz{background:#f2c9c2;color:#5c2018}
+
+/* ---------- SVG plocha ----------
+   Šířka plochy musí respektovat poměr stran kresby (--pomer nastavuje JS
+   z viewBoxu). Bez toho výška naráží na max-height, obrázek se scvrkne
+   doprostřed a po stranách zůstanou mrtvé pásy — na telefonu naležato
+   zabíraly víc místa než sama kresba. */
+.plocha{--svgmax:48vh;width:100%;flex:0 0 auto;min-height:0;
+  max-width:min(96vw,940px,calc(var(--svgmax) * var(--pomer,3.6)))}
+.plocha svg{width:100%;height:auto;max-height:var(--svgmax);display:block;background:#9ccdec;
   border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
-.plocha.mala{max-width:min(70vw,540px)}          /* finále: uvolní místo kartičce */
-.plocha.mala svg{max-height:17vh}
+.plocha.mala{--svgmax:17vh;                      /* finále: uvolní místo kartičce */
+  max-width:min(70vw,540px,calc(var(--svgmax) * var(--pomer,3.6)))}
 .dil{cursor:pointer}
 .dil.vybrany{filter:drop-shadow(0 0 10px #ffe14d)}
 .cil{cursor:pointer}
@@ -77,6 +97,21 @@ html,body{margin:0;height:100%;overflow:hidden;
 .kytle{width:58px;height:58px;border-radius:50%;border:4px solid #fff;cursor:pointer;
   box-shadow:0 4px 8px rgba(0,0,0,.3)}
 .kytle.vybrana{transform:scale(1.18);border-color:#ffe14d}
+
+/* ---------- rozcestník (výběr traktoru) ---------- */
+.hub-nadpis{font-size:clamp(18px,3vw,30px);font-weight:900;text-align:center;color:#182833;
+  text-shadow:0 1px 0 rgba(255,255,255,.55);letter-spacing:1px;margin-bottom:2px}
+.uroven-karty{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;max-width:940px}
+.uroven-karta{width:min(86vw,272px);background:#fffdf6;border:0;border-radius:18px;
+  padding:16px 14px 14px;box-shadow:0 6px 0 #c9b98f;cursor:pointer;text-align:center;font-family:inherit}
+.uroven-karta:active{transform:translateY(3px);box-shadow:0 2px 0 #c9b98f}
+.uroven-karta .ik{font-size:44px;line-height:1}
+.uroven-karta h3{margin:8px 0 2px;font-size:clamp(15px,2.4vw,19px);letter-spacing:1px;color:#182833}
+.uroven-karta p{margin:0;font-size:clamp(11px,1.8vw,14px);color:#5a6b74;font-weight:700}
+.uroven-karta .stav{margin-top:9px;font-size:13px;font-weight:800;padding:5px 12px;border-radius:9px;display:inline-block}
+.uroven-karta .stav.novy{background:#dcecff;color:#20507a}
+.uroven-karta .stav.rozjeto{background:#fff2cf;color:#7a5710}
+.uroven-karta .stav.hotovo{background:#d9f5cf;color:#2f6e28}
 
 /* ---------- lišta postupu = cesta po okolí ---------- */
 #cesta{flex:0 0 auto;display:flex;padding:5px 8px;background:#5d4632;border-top:4px solid #43301f}
@@ -113,9 +148,12 @@ html,body{margin:0;height:100%;overflow:hidden;
   #head h1{font-size:14px;letter-spacing:.5px}
   #head button{width:36px;height:30px;font-size:16px}
   #stage{gap:6px;padding:6px 2vw}
-  .plocha svg{max-height:36vh}
-  .plocha.mala svg{max-height:26vh}
-  .povidka{font-size:15px;line-height:1.3;padding:8px 14px;max-width:36ch}
+  .plocha{--svgmax:27vh}
+  .plocha.mala{--svgmax:22vh}
+  /* Delší příběhy v úrovních 2 a 3: na šířku musí text zůstat na tolika
+     řádcích, kolik jich má zalomených ručně — jinak se zdvojnásobí a
+     tlačítko DÁL vypadne pod spodní okraj. */
+  .povidka{font-size:15px;line-height:1.28;padding:7px 14px;max-width:54ch}
   .zadani{font-size:15px;line-height:1.25;max-width:34ch}
   .volba{font-size:16px;min-height:44px;min-width:70px;padding:8px 18px}
   .dal{font-size:16px;min-height:44px;padding:9px 26px}
@@ -132,14 +170,23 @@ html,body{margin:0;height:100%;overflow:hidden;
   #cesta .polka .ik{font-size:17px}
   #cesta .polka .lb{font-size:7px}
   #cesta .polka .traktorek{font-size:15px;top:-2px}
+  .uroven-karta{padding:10px 10px 8px;box-shadow:0 3px 0 #c9b98f}
+  .uroven-karta .ik{font-size:30px}
+  .uroven-karta h3{font-size:13px;margin:4px 0 1px}
+  .uroven-karta p{font-size:10px}
+  .uroven-karta .stav{font-size:10px;padding:3px 8px;margin-top:5px}
+  .vstup{min-width:56px;min-height:40px;font-size:22px}
+  .pad{max-width:220px;gap:6px}
+  .cislo{font-size:16px;padding:8px 0}
 }
 </style>
 
 <div id="app">
   <div id="head">
-    <h1 id="nadpis">ZETOR 25</h1>
+    <h1 id="nadpis">TRAKTORY</h1>
     <button id="btn-hlas" title="předčítání">🗣️</button>
     <button id="btn-zvuk" title="zvuky">🔊</button>
+    <button id="btn-domu" title="výběr traktoru">🏠</button>
     <button id="btn-znovu" title="začít znovu">↺</button>
   </div>
   <div id="stage"></div>
@@ -148,10 +195,13 @@ html,body{margin:0;height:100%;overflow:hidden;
 
 <script>
 /* ==================================================================
-   ZETOR 25 NA PODLUŽÍ — učící hra pro první čtení a počítání (2. třída ZŠ)
+   TRAKTORY NA PODLUŽÍ — rozcestník + 3 učící úrovně pro první čtení
+   a počítání (2. třída ZŠ)
    Jeden soubor, žádné závislosti, funguje offline z tabletu.
-   Místa: Tvrdonice → Týnec → pole u lesa → Stibůrkovská jezera → vinohrad
-   Mechaniky: skládačka / lakování / jízda / čtení / písmena / počty do 30
+   Úrovně: ZETOR 25 (den na Podluží) / TZ-4K-14 (technika, malý
+   kloubový traktor) / ZETOR 50 SUPER (dědův traktor, rodinný příběh)
+   Mechaniky: skládačka / lakování / jízda / čtení / písmena /
+   počty (výběr) / počty (napiš sám) — beze změny z prvního dema
    ================================================================== */
 
 /* ------------------ zvuk (generovaný, bez souborů) ------------------ */
@@ -209,15 +259,24 @@ function rekni(text){
   }catch(e){}
 }
 
-/* ------------------ stav ------------------ */
-const KLIC = "zetor25.stav.v2";
-const state = { etapa:0, krok:0, dily:[], barva:"#b5342a", nateno:{} };
+/* ------------------ stav (víceúrovňový) ------------------
+   Každá úroveň má vlastní postup (etapa/krok/díly/barva/nátěr),
+   uložené vedle sebe v `postup`, ať přepínání levelů nic nemaže. */
+const KLIC = "traktory.stav.v1";
+const state = { uroven: null, postup: {} };
+function vychoziPostup(){ return { etapa:0, krok:0, dily:[], barva:"#b5342a", nateno:{} }; }
+function S(){
+  if(!state.postup[state.uroven]) state.postup[state.uroven] = vychoziPostup();
+  return state.postup[state.uroven];
+}
 function uloz(){ try{ localStorage.setItem(KLIC, JSON.stringify(state)); }catch(e){} }
 function nacti(){ try{ const s = JSON.parse(localStorage.getItem(KLIC)||"null");
                        if(s) Object.assign(state, s); }catch(e){} }
 
 /* ==================================================================
-   SVG — ZETOR 25 (stylizovaně, jede zleva doprava)
+   SVG — ZETOR 25 / ZETOR 50 SUPER (stylizovaně, jede zleva doprava)
+   Oba Zetory sdílí stejnou kresbu — jsou ze stejné rodiny traktorů,
+   liší se příběhem a fakty na kartičce, ne siluetou.
    Každý díl je <g> s neviditelným velkým hitboxem, aby se dal
    na tabletu pohodlně klikat malými prsty.
    ================================================================== */
@@ -271,20 +330,81 @@ function svgDil(id, lak){
 const svgRam = `<g><path d="M150 150 h190 v26 h-190z" fill="#6c757e"/>
                     <path d="M196 132 h30 v34 h-30z" fill="#6c757e"/></g>`;
 
-/* celý traktor; opts:{dily, nateno, cile} — traktor kreslí do boxu 420×260 */
+/* ==================================================================
+   SVG — TZ-4K-14 (malý kloubový traktor, jiná stavba než Zetor)
+   Skládá se v pořadí, jak se traktor rozebírá doopravdy:
+   podvozek → hydraulika → elektro → motor → závěs.
+   ================================================================== */
+/* Cílové okénko musí ležet tam, kde díl doopravdy je — jinak dítě ťuká
+   na kolo a nic se neděje. Podvozek je proto celý pás i s koly a menší
+   díly nad ním se s ním smějí překrývat: kreslí se později, takže jsou
+   navrchu a kliknutí v překryvu berou ony. */
+const DILY_TZ = [
+  { id:"podvozek",   nazev:"PODVOZEK",   hit:[56,148,330,104] },
+  { id:"hydraulika", nazev:"HYDRAULIKA", hit:[90,110,60,50] },
+  { id:"motor",      nazev:"MOTOR",      hit:[240,64,112,88] },
+  { id:"elektro",    nazev:"ELEKTRO",    hit:[346,86,54,80] },
+  { id:"zaves",      nazev:"ZÁVĚS",      hit:[26,188,54,60] }
+];
+function svgDilTZ(id, lak){
+  const b = lak || SEDA;
+  switch(id){
+  case "podvozek": return `
+    <rect x="56" y="192" width="320" height="26" rx="9" fill="${TMAVA}"/>
+    <circle cx="108" cy="216" r="36" fill="${TMAVA}"/><circle cx="108" cy="216" r="15" fill="#8d99a6"/>
+    <circle cx="326" cy="216" r="32" fill="${TMAVA}"/><circle cx="326" cy="216" r="13" fill="#8d99a6"/>
+    <!-- červený kloub uprostřed: tím se traktor přelamuje, jeho hlavní znak -->
+    <circle cx="216" cy="205" r="15" fill="#b5342a"/>
+    <circle cx="216" cy="205" r="6" fill="#f2ead6"/>
+    <rect x="150" y="150" width="46" height="44" rx="8" fill="${b}"/>
+    <path d="M162 150 q12-11 24 0 l3 10 h-30z" fill="#4a3728"/>
+    <path d="M200 152 L221 120" stroke="#5c646c" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="224" cy="114" r="15" fill="none" stroke="${TMAVA}" stroke-width="7"/>`;
+  case "hydraulika": return `
+    <rect x="104" y="140" width="22" height="56" rx="6" fill="#5c646c"/>
+    <rect x="94" y="114" width="44" height="30" rx="7" fill="#3d4046"/>
+    <path d="M138 126 h16 v11 h-16z" fill="#3d4046"/>
+    <circle cx="116" cy="129" r="7" fill="#8d99a6"/>`;
+  case "motor": return `
+    <rect x="244" y="120" width="104" height="72" rx="10" fill="${b}"/>
+    <g stroke="#4a525a" stroke-width="3"><path d="M328 132 v50"/><path d="M336 132 v50"/></g>
+    <rect x="252" y="132" width="60" height="9" rx="4" fill="rgba(255,255,255,.35)"/>
+    <rect x="262" y="74" width="16" height="48" rx="5" fill="#5c646c"/>
+    <ellipse cx="270" cy="72" rx="12" ry="6" fill="#3d444b"/>`;
+  case "elektro": return `
+    <rect x="350" y="134" width="38" height="30" rx="5" fill="#3d444b"/>
+    <rect x="356" y="126" width="26" height="10" rx="3" fill="#6a4a3d"/>
+    <circle cx="369" cy="104" r="16" fill="#ffe680"/><circle cx="369" cy="104" r="8" fill="#fff3c2"/>`;
+  case "zaves": return `
+    <rect x="34" y="192" width="42" height="22" rx="6" fill="#5c646c"/>
+    <circle cx="52" cy="228" r="13" fill="none" stroke="${TMAVA}" stroke-width="7"/>`;
+  }
+  return "";
+}
+
+/* registr modelů — jedna sada engine funkcí obsluhuje všechny traktory */
+const MODELY = {
+  zetor: { dily:DILY,    svgDil:svgDil,   ram:svgRam, spodekKol:248,
+           natiratelne:["kapota","koloZadni","koloPredni","sedlo"] },
+  tz:    { dily:DILY_TZ, svgDil:svgDilTZ, ram:"",     spodekKol:252,
+           natiratelne:["podvozek","motor"] }
+};
+
+/* celý traktor; opts:{dily, nateno, cile, model} — kreslí do boxu 420×260 */
 function svgTraktor(opts){
-  const o = opts || {}, mam = o.dily || DILY.map(d=>d.id);
-  let s = svgRam;
-  DILY.forEach(d=>{
+  const o = opts || {}, m = MODELY[o.model || "zetor"];
+  const mam = o.dily || m.dily.map(d=>d.id);
+  let s = m.ram || "";
+  m.dily.forEach(d=>{
     if(mam.indexOf(d.id) >= 0){
       const lak = (o.nateno && o.nateno[d.id]) ? o.nateno[d.id] : null;
-      s += `<g class="dil-hotovy" data-dil="${d.id}">${svgDil(d.id, lak)}${hitbox(d)}</g>`;
+      s += `<g class="dil-hotovy" data-dil="${d.id}">${m.svgDil(d.id, lak)}${hitbox(d)}</g>`;
     } else if(o.cile){
       const h = d.hit;
       s += `<g class="cil" data-cil="${d.id}">
               <rect x="${h[0]}" y="${h[1]}" width="${h[2]}" height="${h[3]}" rx="9"
                     fill="#fdfaf1" opacity=".72"/>
-              <g opacity=".22">${svgDil(d.id,"#5c6670")}</g>
+              <g opacity=".22">${m.svgDil(d.id,"#5c6670")}</g>
               <rect x="${h[0]}" y="${h[1]}" width="${h[2]}" height="${h[3]}" rx="9"
                     fill="none" stroke="#2f6e28" stroke-width="3.5" stroke-dasharray="10 7"/>
               ${hitbox(d)}
@@ -385,27 +505,32 @@ function svgKrajina(typ){
        <path d="M700 118 h160 v114 h-160z" fill="none" stroke="#3f2d1d" stroke-width="6"/>
        <path d="M770 118 v114" stroke="#3f2d1d" stroke-width="5"/></g>
     ${strom(90,232,84,"#3f7a3a")}${strom(300,232,62,"#35702f")}` + cesta;
+  case "sad": return obloha + zem("#7fae4a") + `
+    ${[70,210,350,490,630,770,910].map(x=>strom(x,244,58,"#4a8f3f")).join("")}
+    ${[140,280,420,560,700,840].map(x=>strom(x,222,46,"#5aa54a")).join("")}` + cesta;
   }
   return obloha + zem();
 }
 /* Kde v které krajině leží zem (aby traktor nikdy neplaval ve vzduchu).
-   Traktor má spodek kol na y=248 ve svých vlastních souřadnicích. */
-const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276 };
-const SPODEK_KOL = 248;
-function traktorVe(krajina, x, sc, id){
-  const y = (ZEM[krajina] || 276) - SPODEK_KOL * sc;
+   Traktor má spodek kol v lokálních souřadnicích dané v MODELY[x].spodekKol. */
+const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276, sad:276 };
+function traktorVe(krajina, x, sc, id, model){
+  const m = MODELY[model || "zetor"];
+  const y = (ZEM[krajina] || 276) - m.spodekKol * sc;
   return `<g ${id?`id="${id}"`:""} transform="translate(${x},${y}) scale(${sc})">
-            ${svgTraktor({ nateno: state.nateno })}</g>`;
+            ${svgTraktor({ nateno: S().nateno, model })}</g>`;
 }
 /* cílová pozice pro animaci jízdy — stejný přepočet, jiné x */
-function jizdaCil(krajina, x, sc){
-  return `translate(${x},${(ZEM[krajina]||276) - SPODEK_KOL*sc}) scale(${sc})`;
+function jizdaCil(krajina, x, sc, model){
+  const m = MODELY[model || "zetor"];
+  return `translate(${x},${(ZEM[krajina]||276) - m.spodekKol*sc}) scale(${sc})`;
 }
 
 /* ==================================================================
-   PŘÍBĚH — den se Zetorem 25 na Podluží
+   ÚROVEŇ 1 — ZETOR 25: den se Zetorem 25 na Podluží
+   (beze změny z prvního dema)
    ================================================================== */
-const ETAPY = [
+const ETAPY_U1 = [
 { ikona:"🔧", stitek:"STODOLA", nazev:"1. POSKLÁDEJ ZETOR", kroky:[
   { typ:"povidka", krajina:"tvrdonice", text:
     "V TVRDONICÍCH VE STODOLE\nSTOJÍ STARÝ ZETOR.\nJE ROZEBRANÝ NA DÍLY.\nPOSKLÁDEJ HO!",
@@ -484,8 +609,6 @@ const ETAPY = [
     hlas:"Oral jsi dvacet pět minut a potom ještě čtyři. Kolik minut celkem?" }
 ]}
 ];
-
-/* fakta na kartičku (= i čtecí cvičení). `hlas` má číslovky slovy ve správném pádu. */
 const KARTA_ZETOR = [
   "ZETOR 25 JE PRVNÍ TRAKTOR Z BRNA. VYJEL V ROCE 1946.",
   "MĚL DVOUVÁLCOVÝ NAFTOVÝ MOTOR O SÍLE 25 KONÍ.",
@@ -493,7 +616,7 @@ const KARTA_ZETOR = [
   "TÁHL PLUH, SECÍ STROJ I VLEČKU NA MALÝCH POLÍCH.",
   "VYROBILO SE JICH VÍC NEŽ STO PADESÁT TISÍC."
 ];
-const KARTA_HLAS =
+const KARTA_ZETOR_HLAS =
   "Zetor dvacet pět je první traktor z Brna. Vyjel v roce devatenáct set čtyřicet šest. " +
   "Měl dvouválcový naftový motor o síle dvaceti pěti koní. " +
   "Startoval se ruční klikou jako staré auto. " +
@@ -501,11 +624,265 @@ const KARTA_HLAS =
   "Vyrobilo se jich víc než sto padesát tisíc.";
 
 /* ==================================================================
+   ÚROVEŇ 2 — TZ-4K-14: malý pomocník obce
+   Skutečný malý kloubový traktor z Prostějova. Skládačka jde záměrně
+   víc do techniky (podvozek/hydraulika/elektro/motor/závěs), protože
+   technická stránka děti baví nejvíc.
+   ================================================================== */
+const ETAPY_U2 = [
+{ ikona:"🔩", stitek:"DÍLNA", nazev:"1. POSKLÁDEJ TZ-4K-14", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "V DÍLNĚ STOJÍ MALÝ TRAKTOR TZ ČTYŘI KÁČKO ČTRNÁCT.\nJE MENŠÍ NEŽ ZETOR, ALE UMÍ SE OTOČIT NA MALÉM MÍSTĚ.\nMÁ UPROSTŘED KLOUB, KTERÝM SE CELÝ PŘELAMUJE.\nJE ROZEBRANÝ NA ČÁSTI.\nPOSKLÁDEJ HO PO POŘÁDKU: PODVOZEK, HYDRAULIKA, ELEKTRO, MOTOR A ZÁVĚS.",
+    hlas:"V dílně stojí malý traktor T Z čtyři káčko čtrnáct. Je menší než Zetor, ale umí se otočit na malém místě. Má uprostřed kloub, kterým se celý přelamuje. Je rozebraný na části. Poskládej ho po pořádku: podvozek, hydraulika, elektro, motor a závěs." },
+  { typ:"skladacka" },
+  { typ:"cteni", otazka:"PROČ SE TENHLE TRAKTOR TAK DOBŘE OTÁČÍ?",
+    volby:["MÁ KLOUB UPROSTŘED","MÁ TŘI KOLA","JE NAFOUKNUTÝ"], spravne:0 },
+  { typ:"pismena", slovo:"KLOUB", napoveda:"ČÍM SE TRAKTOR PŘELAMUJE VPROSTŘED?" }
+]},
+{ ikona:"🔥", stitek:"MOTOR", nazev:"2. NASTARTUJ A NATŘI HO", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "TZ ČTYŘI KÁČKO ČTRNÁCT MÁ V MOTORU JEN JEDEN VÁLEC.\nZETOR JICH MÁ DVA, TENHLE MALÝ TRAKTOR STAČÍ S JEDNÍM.\nMOTOR MÁ TŘINÁCT KONÍ, JE MENŠÍ NEŽ U ZETORU.\nAŽ HO NASTARTUJEŠ, MŮŽEŠ HO NATŘÍT.",
+    hlas:"T Z čtyři káčko čtrnáct má v motoru jen jeden válec. Zetor jich má dva, tenhle malý traktor stačí s jedním. Motor má třináct koní, je menší než u Zetoru. Až ho nastartuješ, můžeš ho natřít." },
+  { typ:"lakovani" },
+  { typ:"cteni", otazka:"KOLIK MÁ TRAKTOR VÁLCŮ V MOTORU?",
+    volby:["JEDEN","DVA","ČTYŘI"], spravne:0 },
+  { typ:"poctyPsani", a:11, b:9, op:"+", text:"MÁŠ 11 PLECHOVEK BARVY A KOUPÍŠ JEŠTĚ 9.\nKOLIK JICH MÁŠ?\nNAPIŠ ČÍSLO SÁM.",
+    hlas:"Máš jedenáct plechovek barvy a koupíš ještě devět. Kolik jich máš? Napiš číslo sám." },
+  { typ:"pismena", slovo:"MOTOR", napoveda:"CO TRAKTOR NASTARTUJE JAKO PRVNÍ?" }
+]},
+{ ikona:"🧰", stitek:"VOZÍK", nazev:"3. DOJEĎ PRO VOZÍK", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "OBEC POTŘEBUJE ODVÉZT SAZENICE ZE SKLENÍKU.\nVOZÍK NA TO MAJÍ V TÝNCI.\nTRAKTOR SE DÍKY KLOUBU OTOČÍ I NA ÚZKÉ CESTĚ.\nJEĎ SI PRO VOZÍK.",
+    hlas:"Obec potřebuje odvézt sazenice ze skleníku. Vozík na to mají v Týnci. Traktor se díky kloubu otočí i na úzké cestě. Jeď si pro vozík." },
+  { typ:"jizda", krajina:"tvrdonice", text:"TZ JEDE Z TVRDONIC DO TÝNCE" },
+  { typ:"poctyPsani", a:9, b:9, op:"+", text:"DO TÝNCE JE 9 KILOMETRŮ.\nZPÁTKY TAKY 9.\nKOLIK TRAKTOR UJEDE?",
+    hlas:"Do Týnce je devět kilometrů. Zpátky taky devět. Kolik traktor ujede?" },
+  { typ:"cteni", otazka:"CO TRAKTOR PŘIVEZE Z TÝNCE?",
+    volby:["VOZÍK","KOMBAJN","ŽEBŘÍK"], spravne:0 },
+  { typ:"zaprah", nastroj:"vozik", krajina:"tvrdonice", popis:"ZAPŘÁHNI VOZÍK" }
+]},
+{ ikona:"💧", stitek:"SAD", nazev:"4. ZALIJ STROMKY V SADU", kroky:[
+  { typ:"jizda", krajina:"sad", text:"TZ JEDE DO OBECNÍHO SADU" },
+  { typ:"pole", rezim:"seti", popis:"KLIKNI NA KAŽDOU ŘADU A ZALIJ STROMKY" },
+  { typ:"pismena", slovo:"STROMEK", napoveda:"CO V SADU ROSTE A ZALÉVÁŠ HO?" },
+  { typ:"poctyPsani", a:8, b:8, op:"+", text:"ZALIL JSI 8 STROMKŮ A POTOM JEŠTĚ 8.\nKOLIK JICH MÁŠ ZALITÝCH?",
+    hlas:"Zalil jsi osm stromků a potom ještě osm. Kolik jich máš zalitých?" }
+]},
+{ ikona:"🏅", stitek:"MOSKVA", nazev:"5. MALÝ TRAKTOR, VELKÁ SLÁVA", kroky:[
+  { typ:"povidka", krajina:"sad", text:
+    "TENHLE TYP TRAKTORU SE VYRÁBĚL V PROSTĚJOVĚ.\nVYVÁŽEL SE I DO SOVĚTSKÉHO SVAZU.\nPOMÁHAL TAM STAVĚT PRO OLYMPIÁDU V MOSKVĚ V ROCE 1980.\nMALÝ TRAKTOR SE TAM STAL SLAVNÝM.",
+    hlas:"Tenhle typ traktoru se vyráběl v Prostějově. Vyvážel se i do Sovětského svazu. Pomáhal tam stavět pro olympiádu v Moskvě v roce devatenáct set osmdesát. Malý traktor se tam stal slavným." },
+  { typ:"cteni", otazka:"KDE POMÁHAL TENHLE TYP TRAKTORU STAVĚT?",
+    volby:["V MOSKVĚ","V PAŘÍŽI","V PRAZE"], spravne:0 },
+  { typ:"pismena", slovo:"MOSKVA", napoveda:"KDE BYLA OLYMPIÁDA, KTEROU TRAKTOR POMÁHAL STAVĚT?" },
+  { typ:"poctyPsani", a:16, b:4, op:"+", text:"NA STAVBU NAKLÁDAL 16 PYTLŮ PÍSKU\nA PAK JEŠTĚ 4.\nKOLIK JICH BYLO CELKEM?",
+    hlas:"Na stavbu nakládal šestnáct pytlů písku a pak ještě čtyři. Kolik jich bylo celkem?" }
+]},
+{ ikona:"✂️", stitek:"PARK", nazev:"6. POSEKEJ TRÁVU V PARKU", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "V PARKU U KOSTELA VYROSTLA VYSOKÁ TRÁVA.\nOBEC POUŽÍVÁ NA SEKÁNÍ TZ, PROTOŽE SE VEJDE I DO ÚZKÝCH MÍST.\nZAPŘÁHNI SEKAČKU A POSEKEJ TRÁVU.",
+    hlas:"V parku u kostela vyrostla vysoká tráva. Obec používá na sekání T Z, protože se vejde i do úzkých míst. Zapřáhni sekačku a posekej trávu." },
+  { typ:"cteni", otazka:"PROČ OBEC POUŽÍVÁ NA SEKÁNÍ TZ A NE VELKÝ TRAKTOR?",
+    volby:["VEJDE SE I DO ÚZKÝCH MÍST","JE HLASITĚJŠÍ","NEUMÍ SEKAT"], spravne:0 },
+  { typ:"zaprah", nastroj:"sekacka", krajina:"tvrdonice", popis:"ZAPŘÁHNI SEKAČKU" },
+  { typ:"poctyPsani", a:20, b:6, op:"−", text:"V PARKU BYLO 20 HROMÁDEK POSEKANÉ TRÁVY.\nŠEST JICH UŽ ODVEZLI.\nKOLIK JICH TAM ZBÝVÁ?",
+    hlas:"V parku bylo dvacet hromádek posekané trávy. Šest jich už odvezli. Kolik jich tam zbývá?" },
+  { typ:"pismena", slovo:"TRÁVA", napoveda:"CO TRAKTOR V PARKU POSEKAL?" }
+]},
+{ ikona:"🍎", stitek:"JABLKA", nazev:"7. SESBÍREJ JABLKA V SADU", kroky:[
+  { typ:"povidka", krajina:"sad", text:
+    "JABLKA V OBECNÍM SADU DOZRÁLA.\nTRAKTOR PŘIVEZL VOZÍK.\nNALOŽ DO NĚJ VŠECHNA JABLKA.",
+    hlas:"Jablka v obecním sadu dozrála. Traktor přivezl vozík. Nalož do něj všechna jablka." },
+  { typ:"sber", pocet:6, krajina:"sad", vlecka:"vozik", popis:"KLIKNI NA KAŽDOU BEDNU A NALOŽ JI" },
+  { typ:"poctyPsani", a:7, b:7, op:"+", text:"NALOŽIL JSI 7 BEDEN A PAK JEŠTĚ 7.\nKOLIK JICH MÁŠ NA VOZÍKU?",
+    hlas:"Naložil jsi sedm beden a pak ještě sedm. Kolik jich máš na vozíku?" },
+  { typ:"pismena", slovo:"JABLKA", napoveda:"CO JSI V SADU NASBÍRAL?" }
+]},
+{ ikona:"🏠", stitek:"DOMŮ", nazev:"8. ZAJEĎ DOMŮ DO DÍLNY", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "PRÁCE PRO DNEŠEK JE HOTOVÁ.\nMALÝ TRAKTOR TOHO ZVLÁDL HODNĚ, I KDYŽ MÁ JEN JEDEN VÁLEC.\nZAJEĎ S NÍM ZPÁTKY DO DÍLNY.",
+    hlas:"Práce pro dnešek je hotová. Malý traktor toho zvládl hodně, i když má jen jeden válec. Zajeď s ním zpátky do dílny." },
+  { typ:"pismena", slovo:"DÍLNA", napoveda:"KAM SE TRAKTOR VRACÍ NA NOC?" },
+  { typ:"poctyPsani", a:23, b:5, op:"+", text:"DNES JSI UJEL 23 KILOMETRŮ\nA JEŠTĚ 5 NAVÍC.\nKOLIK TO JE CELKEM?",
+    hlas:"Dnes jsi ujel dvacet tři kilometrů a ještě pět navíc. Kolik to je celkem?" }
+]}
+];
+const KARTA_TZ = [
+  "TZ ČTYŘI KÁČKO ČTRNÁCT VYRÁBĚL AGROZET V PROSTĚJOVĚ OD ROKU 1975.",
+  "MÁ UPROSTŘED KLOUB, KTERÝM SE PŘELAMUJE, A OTOČÍ SE NA MALÉM MÍSTĚ.",
+  "MOTOR MÁ JEN JEDEN VÁLEC A DÁVÁ TŘINÁCT KONÍ.",
+  "POMÁHAL V SADECH, SKLENÍCÍCH I OBCÍM.",
+  "TENHLE TYP TRAKTORU SE VYVÁŽEL AŽ DO SOVĚTSKÉHO SVAZU."
+];
+const KARTA_TZ_HLAS =
+  "T Z čtyři káčko čtrnáct vyráběl Agrozet v Prostějově od roku devatenáct set sedmdesát pět. " +
+  "Má uprostřed kloub, kterým se přelamuje, a otočí se na malém místě. " +
+  "Motor má jen jeden válec a dává třináct koní. " +
+  "Pomáhal v sadech, sklenících i obcím. " +
+  "Tenhle typ traktoru se vyvážel až do Sovětského svazu.";
+
+/* ==================================================================
+   ÚROVEŇ 3 — ZETOR 50 SUPER: dědův traktor
+   Rodinný příběh — jeden den s dědou na statku.
+   ================================================================== */
+const ETAPY_U3 = [
+{ ikona:"🚜", stitek:"STODOLA", nazev:"1. POSKLÁDEJ DĚDOVA ZETORA", kroky:[
+  { typ:"povidka", krajina:"statek", text:
+    "U DĚDY VE STODOLE STOJÍ VELKÝ ZETOR 50 SUPER.\nJE SILNĚJŠÍ NEŽ MALÝ ZETOR 25 — MÁ ČTYŘI VÁLCE MÍSTO DVOU A PADESÁT KONÍ.\nDĚDA HO POUŽÍVÁ NA POLI I VE VINOHRADU.\nDNES POJEDEŠ S DĚDOU. NEJDŘÍV HO SPOLU POSKLÁDEJTE.",
+    hlas:"U dědy ve stodole stojí velký Zetor padesát super. Je silnější než malý Zetor dvacet pět, má čtyři válce místo dvou a padesát koní. Děda ho používá na poli i ve vinohradu. Dnes pojedeš s dědou. Nejdřív ho spolu poskládejte." },
+  { typ:"skladacka" },
+  { typ:"cteni", otazka:"KOLIK KONÍ MÁ DĚDŮV ZETOR 50 SUPER?",
+    volby:["50","25","10"], spravne:0 },
+  { typ:"pismena", slovo:"SÍLA", napoveda:"CO MÁ TENHLE TRAKTOR VÍC NEŽ ZETOR 25?" }
+]},
+{ ikona:"🐔", stitek:"KURNÍK", nazev:"2. OPRAV KURNÍK", kroky:[
+  { typ:"povidka", krajina:"statek", text:
+    "V NOCI SE DO KURNÍKU DOSTALA KUNA.\nSEZRALA BABIČCE 25 KUŘÁTEK.\nBABIČKA JE SMUTNÁ, ALE UŽ VÍ, CO SE MUSÍ UDĚLAT.\nDĚDA PŘIVEZE NA ZETORU PRKNA A KURNÍK SPOLU ZPEVNÍTE, AŤ SE TO UŽ NEOPAKUJE.",
+    hlas:"V noci se do kurníku dostala kuna. Sezrala babičce dvacet pět kuřátek. Babička je smutná, ale už ví, co se musí udělat. Děda přiveze na Zetoru prkna a kurník spolu zpevníte, ať se to už neopakuje." },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"statek", popis:"ZAPŘÁHNI VLEČKU NA PRKNA" },
+  { typ:"cteni", otazka:"KDO SE V NOCI DOSTAL DO KURNÍKU?",
+    volby:["KUNA","ZAJÍC","JEŽEK"], spravne:0 },
+  { typ:"poctyPsani", a:12, b:8, op:"+", text:"DĚDA KOUPIL 12 NOVÝCH KUŘÁTEK\nA BABIČKA JEŠTĚ 8.\nKOLIK JICH MAJÍ DOHROMADY?",
+    hlas:"Děda koupil dvanáct nových kuřátek a babička ještě osm. Kolik jich mají dohromady?" },
+  { typ:"pismena", slovo:"KURNÍK", napoveda:"KAM SE KUNA V NOCI DOSTALA?" }
+]},
+{ ikona:"🐇", stitek:"KRÁLÍCI", nazev:"3. NAKRM DĚDOVY KRÁLÍKY", kroky:[
+  { typ:"povidka", krajina:"statek", text:
+    "DĚDA MÁ ZA STODOLOU TAKY KRÁLÍKY V KOTCÍCH.\nKAŽDÉ RÁNO JIM DÁVÁ SENO A MRKEV.\nPOMOZ MU DOVÉZT PYTLE SE SENEM.",
+    hlas:"Děda má za stodolou taky králíky v kotcích. Každé ráno jim dává seno a mrkev. Pomoz mu dovézt pytle se senem." },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"statek", popis:"ZAPŘÁHNI VLEČKU SE SENEM" },
+  { typ:"poctyPsani", a:14, b:5, op:"+", text:"NA VLEČKU JSI NALOŽIL 14 PYTLŮ SENA\nA JEŠTĚ 5.\nKOLIK JICH MÁŠ CELKEM?",
+    hlas:"Na vlečku jsi naložil čtrnáct pytlů sena a ještě pět. Kolik jich máš celkem?" },
+  { typ:"pismena", slovo:"KRÁLÍK", napoveda:"KOHO DĚDA CHOVÁ ZA STODOLOU?" }
+]},
+{ ikona:"🌾", stitek:"POLE", nazev:"4. JEĎ S DĚDOU DO POLE", kroky:[
+  { typ:"jizda", krajina:"pole", text:"ZETOR JEDE S DĚDOU NA POLE" },
+  { typ:"pole", rezim:"orani", popis:"KLIKNI NA KAŽDÝ PRUH A POMOZ DĚDOVI POOREJ POLE" },
+  { typ:"pismena", slovo:"POLE", napoveda:"KAM S DĚDOU DNES JEDEŠ?" },
+  { typ:"poctyPsani", a:17, b:9, op:"+", text:"DĚDA POORAL 17 PRUHŮ\nA TY JEŠTĚ 9.\nKOLIK JICH JE HOTOVO CELKEM?",
+    hlas:"Děda pooral sedmnáct pruhů a ty ještě devět. Kolik jich je hotovo celkem?" }
+]},
+{ ikona:"🌷", stitek:"ZAHRADA", nazev:"5. POMOZ BABIČCE NA ZAHRADĚ", kroky:[
+  { typ:"povidka", krajina:"statek", text:
+    "BABIČKA CHODÍ O BERLÍCH, PROTOŽE JI BOLÍ NOHA.\nZAHRADU MÁ ALE POŘÁD MOC RÁDA A NEJVÍC ZE VŠEHO SVÁ VNOUČATA.\nPŘIVEZ JÍ NA VLEČCE KVĚTINÁČE, AŤ NA NĚ NEMUSÍ DALEKO CHODIT.",
+    hlas:"Babička chodí o berlích, protože ji bolí noha. Zahradu má ale pořád moc ráda a nejvíc ze všeho svá vnoučata. Přivez jí na vlečce květináče, ať na ně nemusí daleko chodit." },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"statek", popis:"ZAPŘÁHNI VLEČKU S KVĚTINÁČI" },
+  { typ:"cteni", otazka:"PROČ BABIČKA CHODÍ O BERLÍCH?",
+    volby:["BOLÍ JI NOHA","JE UNAVENÁ","NECHCE CHODIT"], spravne:0 },
+  { typ:"pismena", slovo:"ZAHRADA", napoveda:"CO MÁ BABIČKA MOC RÁDA?" },
+  { typ:"poctyPsani", a:6, b:6, op:"+", text:"NALOŽIL JSI 6 KVĚTINÁČŮ\nA PAK JEŠTĚ 6.\nKOLIK JICH BABIČCE VEZEŠ?",
+    hlas:"Naložil jsi šest květináčů a pak ještě šest. Kolik jich babičce vezeš?" }
+]},
+{ ikona:"🍇", stitek:"VINOHRAD", nazev:"6. DO VINOHRADU S DĚDOU MYSLIVCEM", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "DĚDA JE MYSLIVEC A CHODÍ DO LESA POZOROVAT ZVĚŘ.\nMÁ TAKY SVŮJ VINOHRAD A DĚLÁ Z NĚJ VLASTNÍ VÍNO.\nHROZNY JSOU ZRALÉ, POMOZ MU JE SKLIDIT.",
+    hlas:"Děda je myslivec a chodí do lesa pozorovat zvěř. Má taky svůj vinohrad a dělá z něj vlastní víno. Hrozny jsou zralé, pomoz mu je sklidit." },
+  { typ:"sber", pocet:6, krajina:"vinohrad", popis:"KLIKNI NA KAŽDOU PŘEPRAVKU A NALOŽ JI" },
+  { typ:"cteni", otazka:"ČÍM SE DĚDA ZABÝVÁ V LESE?",
+    volby:["JE MYSLIVEC","JE UČITEL","JE ŘIDIČ AUTOBUSU"], spravne:0 },
+  { typ:"poctyPsani", a:9, b:9, op:"+", text:"NALOŽIL JSI 9 PŘEPRAVEK\nA PAK JEŠTĚ 9.\nKOLIK JICH MÁŠ NA VLEČCE?",
+    hlas:"Naložil jsi devět přepravek a pak ještě devět. Kolik jich máš na vlečce?" },
+  { typ:"pismena", slovo:"VÍNO", napoveda:"CO DĚDA DĚLÁ Z HROZNŮ?" }
+]},
+{ ikona:"🏡", stitek:"DŮM", nazev:"7. STAVBA NOVÉHO POKOJÍČKU", kroky:[
+  { typ:"povidka", krajina:"statek", text:
+    "TATÍNEK S MAMINKOU KOUPILI STARÝ DŮM A POMALU HO OPRAVUJÍ.\nBUDEŠ TAM MÍT SVŮJ VLASTNÍ POKOJÍČEK.\nNAHOŘE BUDE PATROVÁ POSTEL A DOLE STŮL NA KRESLENÍ A STAVĚNÍ.\nDĚDA POMÁHÁ TATÍNKOVI VOZIT NA ZETORU STAVEBNÍ MATERIÁL.",
+    hlas:"Tatínek s maminkou koupili starý dům a pomalu ho opravují. Budeš tam mít svůj vlastní pokojíček. Nahoře bude patrová postel a dole stůl na kreslení a stavění. Děda pomáhá tatínkovi vozit na Zetoru stavební materiál." },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"statek", popis:"ZAPŘÁHNI VLEČKU SE DŘEVEM" },
+  { typ:"poctyPsani", a:13, b:7, op:"+", text:"NA VLEČKU NALOŽILI 13 PRKEN\nA JEŠTĚ 7.\nKOLIK JICH JE CELKEM?",
+    hlas:"Na vlečku naložili třináct prken a ještě sedm. Kolik jich je celkem?" },
+  { typ:"pismena", slovo:"POSTEL", napoveda:"CO BUDEŠ MÍT V POKOJÍČKU NAHOŘE?" }
+]},
+{ ikona:"👶", stitek:"DVOJČATA", nazev:"8. ZPÁTKY DOMŮ ZA SOUROZENCI", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "DOMA UŽ ČEKAJÍ TVOJE DVOJČATA SOUROZENCI.\nCELÝ DEN JSI POMÁHAL DĚDOVI NA ZETORU 50 SUPER.\nZAJEĎ S TRAKTOREM ZPÁTKY DO STODOLY A JDI JIM VŠECHNO VYPRÁVĚT.",
+    hlas:"Doma už čekají tvoje dvojčata sourozenci. Celý den jsi pomáhal dědovi na Zetoru padesát super. Zajeď s traktorem zpátky do stodoly a jdi jim všechno vyprávět." },
+  { typ:"pismena", slovo:"RODINA", napoveda:"KDO NA TEBE DOMA ČEKÁ?" },
+  { typ:"poctyPsani", a:22, b:7, op:"+", text:"DNES JSTE S DĚDOU UJELI 22 KILOMETRŮ\nA JEŠTĚ 7 NAVÍC.\nKOLIK TO BYLO CELKEM?",
+    hlas:"Dnes jste s dědou ujeli dvacet dva kilometrů a ještě sedm navíc. Kolik to bylo celkem?" }
+]}
+];
+const KARTA_50 = [
+  "ZETOR 50 SUPER SE VYRÁBĚL V BRNĚ OD KONCE PADESÁTÝCH LET DO ROKU 1968.",
+  "MÁ ČTYŘVÁLCOVÝ NAFTOVÝ MOTOR O SÍLE 50 KONÍ — DVAKRÁT VÍC NEŽ ZETOR 25.",
+  "MÁ PĚT RYCHLOSTÍ DOPŘEDU A JEDNU DOZADU.",
+  "NEJRYCHLEJI UJEDE 27 KILOMETRŮ ZA HODINU.",
+  "TAKOVÉ TRAKTORY POMÁHALY NA ČESKÝCH A MORAVSKÝCH POLÍCH CELÁ DESETILETÍ."
+];
+const KARTA_50_HLAS =
+  "Zetor padesát super se vyráběl v Brně od konce padesátých let do roku devatenáct set šedesát osm. " +
+  "Má čtyřválcový naftový motor o síle padesáti koní, dvakrát víc než Zetor dvacet pět. " +
+  "Má pět rychlostí dopředu a jednu dozadu. " +
+  "Nejrychleji ujede dvacet sedm kilometrů za hodinu. " +
+  "Takové traktory pomáhaly na českých a moravských polích celá desetiletí.";
+
+/* ==================================================================
+   ROZCESTNÍK — registr úrovní
+   ================================================================== */
+const UROVNE = [
+  { klic:"u1", ikona:"🚜", nazev:"ZETOR 25", podnazev:"Den na Podluží", model:"zetor",
+    etapy: ETAPY_U1, nazevKarty:"ZETOR 25", karta: KARTA_ZETOR, kartaHlas: KARTA_ZETOR_HLAS,
+    dojezdNadpis:"HOTOVO! ZETOR JEDE DO STODOLY" },
+  { klic:"u2", ikona:"🔧", nazev:"TZ-4K-14", podnazev:"Malý pomocník obce", model:"tz",
+    etapy: ETAPY_U2, nazevKarty:"TZ-4K-14", karta: KARTA_TZ, kartaHlas: KARTA_TZ_HLAS,
+    dojezdNadpis:"HOTOVO! TZ JEDE DO DÍLNY" },
+  { klic:"u3", ikona:"👴", nazev:"ZETOR 50 SUPER", podnazev:"Dědův traktor", model:"zetor",
+    etapy: ETAPY_U3, nazevKarty:"ZETOR 50 SUPER", karta: KARTA_50, kartaHlas: KARTA_50_HLAS,
+    dojezdNadpis:"HOTOVO! DĚDŮV TRAKTOR JE DOMA" }
+];
+
+/* ==================================================================
+   NÁSTROJE K ZAPŘAŽENÍ (secí stroj, vlečka, pluh, vozík, sekačka)
+   ================================================================== */
+const NASTROJE = {
+  secka:   { spodek:236, pravy:194, nazev:"SECÍ STROJ" },
+  vlecka:  { spodek:231, pravy:194, nazev:"VLEČKA" },
+  pluh:    { spodek:202, pravy:190, nazev:"PLUH" },
+  vozik:   { spodek:220, pravy:140, nazev:"VOZÍK" },
+  sekacka: { spodek:214, pravy:140, nazev:"SEKAČKA" }
+};
+function svgNastroj(typ, x){
+  const g = (v)=>`<g transform="translate(${x},0)">${v}</g>`;
+  if(typ === "secka") return g(`
+    <rect x="20" y="140" width="150" height="42" rx="8" fill="#c9a227"/>
+    <rect x="40" y="118" width="110" height="28" rx="6" fill="#e0b83a"/>
+    <g fill="#5c646c">${[0,1,2,3,4,5].map(i=>
+      `<rect x="${32+i*24}" y="180" width="9" height="30" rx="4"/>`).join("")}</g>
+    <circle cx="46" cy="212" r="24" fill="#2d3339"/><circle cx="46" cy="212" r="11" fill="#8d99a6"/>
+    <circle cx="150" cy="212" r="24" fill="#2d3339"/><circle cx="150" cy="212" r="11" fill="#8d99a6"/>`);
+  if(typ === "vlecka") return g(`
+    <path d="M14 118 h180 v68 h-180z" fill="#3f7a4a"/>
+    <path d="M14 118 h180 v14 h-180z" fill="#5c9a66"/>
+    <path d="M24 118 q80-26 160 0" fill="#d9a441"/>
+    <circle cx="62" cy="204" r="27" fill="#2d3339"/><circle cx="62" cy="204" r="12" fill="#8d99a6"/>
+    <circle cx="150" cy="204" r="27" fill="#2d3339"/><circle cx="150" cy="204" r="12" fill="#8d99a6"/>`);
+  if(typ === "vozik") return g(`
+    <rect x="20" y="150" width="120" height="34" rx="6" fill="#c9a227"/>
+    <rect x="30" y="130" width="100" height="22" rx="5" fill="#e0b83a"/>
+    <circle cx="42" cy="200" r="20" fill="#2d3339"/><circle cx="42" cy="200" r="9" fill="#8d99a6"/>
+    <circle cx="118" cy="200" r="20" fill="#2d3339"/><circle cx="118" cy="200" r="9" fill="#8d99a6"/>`);
+  if(typ === "sekacka") return g(`
+    <rect x="10" y="168" width="130" height="30" rx="14" fill="#4a8f3f"/>
+    <circle cx="30" cy="200" r="14" fill="#2d3339"/><circle cx="110" cy="200" r="14" fill="#2d3339"/>
+    <rect x="50" y="150" width="50" height="20" rx="6" fill="#5c9a55"/>`);
+  return g(`
+    <rect x="30" y="132" width="140" height="20" rx="8" fill="#5c646c"/>
+    ${[0,1,2].map(i=>`<path d="M${52+i*44} 152 v30 q0 18 20 20 l10-13 q-14-4-14-14 v-23z" fill="#9aa4ad"/>`).join("")}
+    <circle cx="44" cy="170" r="18" fill="#2d3339"/><circle cx="44" cy="170" r="8" fill="#8d99a6"/>`);
+}
+
+/* ==================================================================
    ENGINE
    ================================================================== */
 const stage = document.getElementById("stage");
 const nadpisEl = document.getElementById("nadpis");
 const cestaEl = document.getElementById("cesta");
+const btnZnovu = document.getElementById("btn-znovu");
+const btnDomu = document.getElementById("btn-domu");
+
+function aktivniUroven(){ return UROVNE.find(u=>u.klic === state.uroven); }
+function modelAktivni(){ return aktivniUroven().model; }
+function konfModelu(){ return MODELY[modelAktivni()]; }
 
 function nahodne(pole){
   const p = pole.slice();
@@ -515,10 +892,10 @@ function nahodne(pole){
 function blikOk(){ const d = document.createElement("div"); d.className = "ok-blik";
   stage.appendChild(d); setTimeout(()=>d.remove(), 460); }
 function dalsiKrok(){
-  const e = ETAPY[state.etapa];
-  if(state.krok + 1 < e.kroky.length) state.krok++;
-  else if(state.etapa + 1 < ETAPY.length){ state.etapa++; state.krok = 0; zvuk.motor(6); }
-  else { state.etapa = ETAPY.length; state.krok = 0; }
+  const e = aktivniUroven().etapy, s = S();
+  if(s.krok + 1 < e[s.etapa].kroky.length) s.krok++;
+  else if(s.etapa + 1 < e.length){ s.etapa++; s.krok = 0; zvuk.motor(6); }
+  else { s.etapa = e.length; s.krok = 0; }
   uloz(); kresli();
 }
 function hotovo(){ blikOk(); zvuk.dobre(); setTimeout(dalsiKrok, 520); }
@@ -526,35 +903,71 @@ function hotovo(){ blikOk(); zvuk.dobre(); setTimeout(dalsiKrok, 520); }
 const KROKY = {};
 function kresli(){
   stage.innerHTML = "";
+  if(state.uroven === null){
+    btnZnovu.style.display = "none";
+    btnDomu.style.display = "none";
+    cestaEl.style.display = "none";
+    nadpisEl.textContent = "VYBER TRAKTOR";
+    kresliHub();
+    return;
+  }
+  btnZnovu.style.display = "";
+  btnDomu.style.display = "";
+  cestaEl.style.display = "flex";
   kresliCestu();
-  if(state.etapa >= ETAPY.length) return finale();
-  const e = ETAPY[state.etapa], k = e.kroky[state.krok];
+  const u = aktivniUroven(), s = S();
+  if(s.etapa >= u.etapy.length) return finale();
+  const e = u.etapy[s.etapa], k = e.kroky[s.krok];
   nadpisEl.textContent = e.nazev;
   KROKY[k.typ](k);
 }
 function kresliCestu(){
   cestaEl.innerHTML = "";
-  const polky = ETAPY.map(e=>({ik:e.ikona, lb:e.stitek})).concat([{ik:"🏚️", lb:"DOMA"}]);
+  const u = aktivniUroven(), s = S();
+  const polky = u.etapy.map(e=>({ik:e.ikona, lb:e.stitek})).concat([{ik:"🏚️", lb:"DOMA"}]);
   polky.forEach((p,i)=>{
     const d = document.createElement("div");
-    d.className = "polka" + (i < state.etapa ? " hotovo" : (i===polky.length-1 && state.etapa>=ETAPY.length ? " hotovo":""));
+    d.className = "polka" + (i < s.etapa ? " hotovo" : (i===polky.length-1 && s.etapa>=u.etapy.length ? " hotovo":""));
     d.innerHTML = `<span class="ik">${p.ik}</span><span class="lb">${p.lb}</span>`;
-    if(i === state.etapa || (i === polky.length-1 && state.etapa >= ETAPY.length)){
+    if(i === s.etapa || (i === polky.length-1 && s.etapa >= u.etapy.length)){
       const t = document.createElement("span");
       t.className = "traktorek"; t.textContent = "🚜"; d.appendChild(t);
     }
     cestaEl.appendChild(d);
   });
 }
+function kresliHub(){
+  const nadpis = document.createElement("div"); nadpis.className = "hub-nadpis";
+  nadpis.textContent = "VYBER SI TRAKTOR A HRAJ";
+  const karty = document.createElement("div"); karty.className = "uroven-karty";
+  UROVNE.forEach(u=>{
+    const s = state.postup[u.klic];
+    let stavTxt = "HRÁT ▶", stavTrida = "novy";
+    if(s && s.etapa >= u.etapy.length){ stavTxt = "HOTOVO ⭐⭐⭐"; stavTrida = "hotovo"; }
+    else if(s && (s.etapa > 0 || s.krok > 0 || s.dily.length)){ stavTxt = "POKRAČOVAT ▶"; stavTrida = "rozjeto"; }
+    const b = document.createElement("button"); b.className = "uroven-karta";
+    b.innerHTML = `<div class="ik">${u.ikona}</div><h3>${u.nazev}</h3><p>${u.podnazev}</p>
+      <span class="stav ${stavTrida}">${stavTxt}</span>`;
+    b.onclick = ()=>{ zvuk.klik(); state.uroven = u.klic; uloz(); kresli(); };
+    karty.appendChild(b);
+  });
+  stage.append(nadpis, karty);
+}
+/* Poměr stran kresby si CSS bere z --pomer, aby plocha nebyla širší, než
+   kolik se při dané max výšce vejde (jinak vzniknou prázdné pásy po stranách). */
+function usadPomer(p, vb){
+  const c = (vb || "0 0 420 260").split(/\s+/);
+  p.style.setProperty("--pomer", (+c[2] / +c[3]).toFixed(3));
+}
 function plochaEl(html, vb){
   const p = document.createElement("div"); p.className = "plocha";
-  p.innerHTML = obal(html, vb); return p;
+  p.innerHTML = obal(html, vb); usadPomer(p, vb); return p;
 }
 
 /* ---------- 1) příběhový panel ---------- */
 KROKY.povidka = function(k){
   const obr = plochaEl(svgKrajina(k.krajina) +
-    traktorVe(k.krajina, 110, .46), "0 0 1000 300");
+    traktorVe(k.krajina, 110, .46, null, modelAktivni()), "0 0 1000 300");
   const p = document.createElement("div"); p.className = "povidka"; p.textContent = k.text;
   const b = document.createElement("button");
   b.className = "dal"; b.textContent = "DÁL ▶";
@@ -565,8 +978,9 @@ KROKY.povidka = function(k){
 
 /* ---------- 2) jízda mezi místy ---------- */
 KROKY.jizda = function(k){
+  const model = modelAktivni();
   const obr = plochaEl(svgKrajina(k.krajina) +
-    traktorVe(k.krajina, -140, .46, "jede"), "0 0 1000 300");
+    traktorVe(k.krajina, -140, .46, "jede", model), "0 0 1000 300");
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.text;
   const b = document.createElement("button");
   b.className = "dal"; b.textContent = "JEĎ ▶";
@@ -575,7 +989,7 @@ KROKY.jizda = function(k){
     b.disabled = true; b.textContent = "BRUM BRUM…";
     const t = obr.querySelector("#jede");
     t.style.transition = "transform 3.2s linear";
-    requestAnimationFrame(()=>t.setAttribute("transform", jizdaCil(k.krajina, 780, .46)));
+    requestAnimationFrame(()=>t.setAttribute("transform", jizdaCil(k.krajina, 780, .46, model)));
     zvuk.motor(30);
     setTimeout(dalsiKrok, 3300);
   };
@@ -583,22 +997,24 @@ KROKY.jizda = function(k){
 
 /* ---------- 3) skládačka ---------- */
 KROKY.skladacka = function(){
+  const s = S(), m = konfModelu();
   let vybrany = null;
   const z = document.createElement("div"); z.className = "zadani";
   z.textContent = "KLIKNI NA DÍL A POTOM NA JEHO MÍSTO NA TRAKTORU";
   const plocha = document.createElement("div"); plocha.className = "plocha";
+  usadPomer(plocha);
   const zasoba = document.createElement("div"); zasoba.className = "volby";
   stage.append(z, plocha, zasoba);
 
   function prekresli(){
-    plocha.innerHTML = obal(svgDilna + svgTraktor({ dily: state.dily, cile: true }));
+    plocha.innerHTML = obal(svgDilna + svgTraktor({ dily: s.dily, cile: true, model: modelAktivni() }));
     plocha.querySelectorAll(".cil").forEach(c=>{
       c.onclick = ()=>{
         if(!vybrany){ zvuk.klik(); return; }
         if(c.dataset.cil === vybrany){
-          state.dily.push(vybrany); vybrany = null; uloz(); zvuk.dobre();
+          s.dily.push(vybrany); vybrany = null; uloz(); zvuk.dobre();
           prekresli(); prekresliZasobu();
-          if(state.dily.length === DILY.length){ zvuk.motor(); setTimeout(hotovo, 500); }
+          if(s.dily.length === m.dily.length){ zvuk.motor(); setTimeout(hotovo, 500); }
         } else {
           zvuk.spatne(); c.setAttribute("opacity",".85");
           setTimeout(()=>c.setAttribute("opacity",".32"), 250);
@@ -608,7 +1024,7 @@ KROKY.skladacka = function(){
   }
   function prekresliZasobu(){
     zasoba.innerHTML = "";
-    DILY.filter(d=>state.dily.indexOf(d.id) < 0).forEach(d=>{
+    m.dily.filter(d=>s.dily.indexOf(d.id) < 0).forEach(d=>{
       const b = document.createElement("button");
       b.className = "volba" + (vybrany === d.id ? " dobre" : "");
       b.textContent = d.nazev;
@@ -621,31 +1037,32 @@ KROKY.skladacka = function(){
 
 /* ---------- 4) lakování ---------- */
 const BARVY = [{kod:"#b5342a",nazev:"ČERVENÁ"},{kod:"#2f7a3d",nazev:"ZELENÁ"},{kod:"#2f5c9e",nazev:"MODRÁ"}];
-const NATIRATELNE = ["kapota","koloZadni","koloPredni","sedlo"];
 KROKY.lakovani = function(){
+  const s = S(), m = konfModelu();
   const z = document.createElement("div"); z.className = "zadani";
   z.textContent = "VYBER BARVU A NATŘI CELÝ TRAKTOR";
   const plocha = document.createElement("div"); plocha.className = "plocha";
+  usadPomer(plocha);
   const paleta = document.createElement("div"); paleta.className = "paleta";
   stage.append(z, plocha, paleta);
 
   BARVY.forEach(b=>{
     const k = document.createElement("div");
-    k.className = "kytle" + (state.barva === b.kod ? " vybrana" : "");
+    k.className = "kytle" + (s.barva === b.kod ? " vybrana" : "");
     k.style.background = b.kod; k.title = b.nazev; k.dataset.barva = b.nazev;
-    k.onclick = ()=>{ state.barva = b.kod; zvuk.klik();
+    k.onclick = ()=>{ s.barva = b.kod; zvuk.klik();
       paleta.querySelectorAll(".kytle").forEach(x=>x.classList.remove("vybrana"));
       k.classList.add("vybrana"); };
     paleta.appendChild(k);
   });
   function prekresli(){
-    plocha.innerHTML = obal(svgDilna + svgTraktor({ nateno: state.nateno }));
+    plocha.innerHTML = obal(svgDilna + svgTraktor({ nateno: s.nateno, model: modelAktivni() }));
     plocha.querySelectorAll(".dil-hotovy").forEach(g=>{
-      if(NATIRATELNE.indexOf(g.dataset.dil) < 0) return;
+      if(m.natiratelne.indexOf(g.dataset.dil) < 0) return;
       g.classList.add("dil");
       g.onclick = ()=>{
-        state.nateno[g.dataset.dil] = state.barva; uloz(); zvuk.klik(); prekresli();
-        if(NATIRATELNE.every(x=>state.nateno[x])) setTimeout(hotovo, 400);
+        s.nateno[g.dataset.dil] = s.barva; uloz(); zvuk.klik(); prekresli();
+        if(m.natiratelne.every(x=>s.nateno[x])) setTimeout(hotovo, 400);
       };
     });
   }
@@ -654,9 +1071,10 @@ KROKY.lakovani = function(){
 
 /* ---------- 5) čtení ---------- */
 KROKY.cteni = function(k){
+  const s = S(), model = modelAktivni();
   const plocha = plochaEl(k.krajina
-    ? svgKrajina(k.krajina) + traktorVe(k.krajina, 60, .42)
-    : svgTraktor({ nateno: state.nateno }), k.krajina ? "0 0 1000 300" : null);
+    ? svgKrajina(k.krajina) + traktorVe(k.krajina, 60, .42, null, model)
+    : svgTraktor({ nateno: s.nateno, model }), k.krajina ? "0 0 1000 300" : null);
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.otazka;
   const v = document.createElement("div"); v.className = "volby";
   nahodne(k.volby.map((t,i)=>({t,i}))).forEach(o=>{
@@ -716,7 +1134,7 @@ KROKY.pismena = function(k){
   prekresli();
 };
 
-/* ---------- 7) počty do 30 ---------- */
+/* ---------- 7a) počty do 30 — výběr ze 3 (úroveň 1) ---------- */
 KROKY.pocty = function(k){
   const spravne = k.op === "+" ? k.a + k.b : k.a - k.b;
   const z = document.createElement("div"); z.className = "povidka"; z.textContent = k.text;
@@ -740,47 +1158,63 @@ KROKY.pocty = function(k){
   rekni(k.hlas);
 };
 
+/* ---------- 7b) počty do 30 — napiš číslo sám (úroveň 2 a 3) ---------- */
+KROKY.poctyPsani = function(k){
+  const spravne = k.op === "+" ? k.a + k.b : k.a - k.b;
+  let zadano = "";
+  const z = document.createElement("div"); z.className = "povidka"; z.textContent = k.text;
+  const p = document.createElement("div"); p.className = "priklad";
+  const vw = document.createElement("div"); vw.className = "vstup-wrap";
+  const pad = document.createElement("div"); pad.className = "pad";
+  stage.append(z, p, vw, pad);
+
+  function prekresli(){
+    p.textContent = `${k.a} ${k.op} ${k.b} =`;
+    vw.innerHTML = `<span class="vstup">${zadano || "?"}</span>`;
+  }
+  ["1","2","3","4","5","6","7","8","9","⌫","0","✓"].forEach(t=>{
+    const b = document.createElement("button");
+    b.className = "cislo" + (t === "✓" ? " ok" : t === "⌫" ? " smaz" : "");
+    b.textContent = t;
+    b.onclick = ()=>{
+      if(t === "⌫"){ zvuk.klik(); zadano = zadano.slice(0,-1); prekresli(); return; }
+      if(t === "✓"){
+        if(!zadano) { zvuk.klik(); return; }
+        const vstup = vw.querySelector(".vstup");
+        if(+zadano === spravne){ vstup.classList.add("dobre"); hotovo(); }
+        else {
+          zvuk.spatne(); vstup.classList.add("spatne");
+          setTimeout(()=>{ zadano = ""; prekresli(); }, 550);
+        }
+        return;
+      }
+      if(zadano.length >= 2) return;
+      zvuk.klik(); zadano += t; prekresli();
+    };
+    pad.appendChild(b);
+  });
+  prekresli();
+  rekni(k.hlas);
+};
+
 /* ---------- 8) zapřáhnutí nástroje ----------
    Tažený stroj patří ZA traktor (traktor jede vpravo), takže se kreslí
    vlevo a po zapřáhnutí dojede k čepu. Rozměry níž slouží k usazení
    na zem, aby nic neplavalo ve vzduchu. */
-const NASTROJE = {
-  secka:  { spodek:236, pravy:194, nazev:"SECÍ STROJ" },
-  vlecka: { spodek:231, pravy:194, nazev:"VLEČKA" },
-  pluh:   { spodek:202, pravy:190, nazev:"PLUH" }
-};
-function svgNastroj(typ, x){
-  const g = (v)=>`<g transform="translate(${x},0)">${v}</g>`;
-  if(typ === "secka") return g(`
-    <rect x="20" y="140" width="150" height="42" rx="8" fill="#c9a227"/>
-    <rect x="40" y="118" width="110" height="28" rx="6" fill="#e0b83a"/>
-    <g fill="#5c646c">${[0,1,2,3,4,5].map(i=>
-      `<rect x="${32+i*24}" y="180" width="9" height="30" rx="4"/>`).join("")}</g>
-    <circle cx="46" cy="212" r="24" fill="#2d3339"/><circle cx="46" cy="212" r="11" fill="#8d99a6"/>
-    <circle cx="150" cy="212" r="24" fill="#2d3339"/><circle cx="150" cy="212" r="11" fill="#8d99a6"/>`);
-  if(typ === "vlecka") return g(`
-    <path d="M14 118 h180 v68 h-180z" fill="#3f7a4a"/>
-    <path d="M14 118 h180 v14 h-180z" fill="#5c9a66"/>
-    <path d="M24 118 q80-26 160 0" fill="#d9a441"/>
-    <circle cx="62" cy="204" r="27" fill="#2d3339"/><circle cx="62" cy="204" r="12" fill="#8d99a6"/>
-    <circle cx="150" cy="204" r="27" fill="#2d3339"/><circle cx="150" cy="204" r="12" fill="#8d99a6"/>`);
-  return g(`
-    <rect x="30" y="132" width="140" height="20" rx="8" fill="#5c646c"/>
-    ${[0,1,2].map(i=>`<path d="M${52+i*44} 152 v30 q0 18 20 20 l10-13 q-14-4-14-14 v-23z" fill="#9aa4ad"/>`).join("")}
-    <circle cx="44" cy="170" r="18" fill="#2d3339"/><circle cx="44" cy="170" r="8" fill="#8d99a6"/>`);
-}
 KROKY.zaprah = function(k){
+  const s = S(), m = konfModelu(), model = modelAktivni();
   let pripojeno = false;
   const z = document.createElement("div"); z.className = "zadani";
   z.textContent = k.popis + " — KLIKNI NA ŽLUTÝ ČEP";
   const plocha = document.createElement("div"); plocha.className = "plocha";
+  usadPomer(plocha, "0 0 1000 300");
   stage.append(plocha, z);
 
   const kraj = k.krajina || "tvrdonice";
   const n = NASTROJE[k.nastroj];
   const SC_T = .52, SC_N = .58;                       // měřítko traktoru / nástroje
   const cepX = 470;                                   // kde je tažný čep
-  const yT = (ZEM[kraj] - SPODEK_KOL*SC_T);
+  const yT = (ZEM[kraj] - m.spodekKol*SC_T);
   const yN = (ZEM[kraj] - n.spodek*SC_N);
   const posunPripojeno = cepX - n.pravy*SC_N;         // pravý okraj stroje sedne na čep
   const posunDaleko = posunPripojeno - 210;
@@ -792,7 +1226,7 @@ KROKY.zaprah = function(k){
           transform="translate(${pripojeno ? posunPripojeno : posunDaleko},${yN}) scale(${SC_N})"
        >${svgNastroj(k.nastroj, 0)}</g>` +
       `<g transform="translate(${cepX - 14},${yT}) scale(${SC_T})">
-          ${svgTraktor({ nateno: state.nateno })}</g>` +
+          ${svgTraktor({ nateno: s.nateno, model })}</g>` +
       (pripojeno ? "" :
         `<g class="cil" data-cep="1">
            <circle cx="${cepX}" cy="${ZEM[kraj]-46}" r="26" fill="#ffd166"
@@ -810,11 +1244,13 @@ KROKY.zaprah = function(k){
   prekresli();
 };
 
-/* ---------- 9) pole: setí / orání po pruzích ---------- */
+/* ---------- 9) pole: setí / zalévání / orání po pruzích ---------- */
 KROKY.pole = function(k){
+  const s = S();
   const POCET = 6, hotove = new Array(POCET).fill(false);
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.popis;
   const plocha = document.createElement("div"); plocha.className = "plocha";
+  usadPomer(plocha, "0 0 940 300");
   stage.append(plocha, z);
 
   function prekresli(){
@@ -822,20 +1258,20 @@ KROKY.pole = function(k){
     let pruhy = `<rect x="0" y="0" width="940" height="300" fill="#8ec3e8"/>`;
     for(let i=0;i<POCET;i++){
       const y = 22 + i*hp;
-      const zaklad = k.rezim === "seti" ? "#a8763f" : "#c9b06a";
-      const po = k.rezim === "seti" ? "#6ea23f" : "#6b4a26";
+      const zaklad = k.rezim === "orani" ? "#c9b06a" : "#a8763f";
+      const po = k.rezim === "orani" ? "#6b4a26" : "#6ea23f";
       pruhy += `<rect class="cil" data-pruh="${i}" x="26" y="${y}" width="888" height="${hp-8}"
                   rx="6" fill="${hotove[i]?po:zaklad}" stroke="#7a5a2e" stroke-width="2"/>`;
       if(hotove[i]){
-        if(k.rezim === "seti")
-          for(let j=0;j<11;j++) pruhy += `<text x="${58+j*78}" y="${y+26}" font-size="22">🌱</text>`;
-        else
+        if(k.rezim === "orani")
           for(let j=0;j<25;j++) pruhy += `<rect x="${36+j*35}" y="${y+5}" width="15" height="${hp-19}" rx="4" fill="#54381d"/>`;
+        else
+          for(let j=0;j<11;j++) pruhy += `<text x="${58+j*78}" y="${y+26}" font-size="22">🌱</text>`;
       }
     }
     const kh = hotove.filter(Boolean).length;
     plocha.innerHTML = obal(pruhy +
-      `<g transform="translate(690,${(kh?kh-1:0)*42 - 44}) scale(.42)">${svgTraktor({nateno:state.nateno})}</g>`,
+      `<g transform="translate(690,${(kh?kh-1:0)*42 - 44}) scale(.42)">${svgTraktor({nateno:s.nateno, model:modelAktivni()})}</g>`,
       "0 0 940 300");
     plocha.querySelectorAll("[data-pruh]").forEach(r=>{
       r.onclick = ()=>{
@@ -849,11 +1285,15 @@ KROKY.pole = function(k){
   prekresli();
 };
 
-/* ---------- 10) sběr přepravek ve vinohradu ---------- */
+/* ---------- 10) sběr přepravek / beden ---------- */
 KROKY.sber = function(k){
+  const s = S(), model = modelAktivni();
   const n = k.pocet, nalozene = new Array(n).fill(false);
+  const kraj = k.krajina || "vinohrad";
+  const nastroj = k.vlecka || "vlecka";
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.popis;
   const plocha = document.createElement("div"); plocha.className = "plocha";
+  usadPomer(plocha, "0 0 1000 300");
   stage.append(plocha, z);
 
   function prekresli(){
@@ -872,7 +1312,7 @@ KROKY.sber = function(k){
       </g>`;
     }
     /* vlečka je zapřažená ZA traktorem, tedy vlevo od něj */
-    const yVlecky = ZEM.vinohrad - 231*.46;
+    const yVlecky = ZEM[kraj] - 231*.46;
     const nalozenoKusu = nalozene.filter(Boolean).length;
     let naVlecce = "";
     for(let i=0;i<nalozenoKusu;i++){
@@ -881,9 +1321,9 @@ KROKY.sber = function(k){
                    <circle cx="${x+12}" cy="${y-4}" r="6" fill="#6a3d7a"/>`;
     }
     plocha.innerHTML = obal(
-      svgKrajina("vinohrad") +
-      `<g transform="translate(300,${yVlecky}) scale(.46)">${svgNastroj("vlecka", 0)}</g>` +
-      traktorVe("vinohrad", 396, .46) +
+      svgKrajina(kraj) +
+      `<g transform="translate(300,${yVlecky}) scale(.46)">${svgNastroj(nastroj, 0)}</g>` +
+      traktorVe(kraj, 396, .46, null, model) +
       naVlecce + bedny, "0 0 1000 300");
     plocha.querySelectorAll("[data-bedna]").forEach(g=>{
       g.onclick = ()=>{
@@ -897,9 +1337,10 @@ KROKY.sber = function(k){
 
 /* ---------- finále ---------- */
 function finale(){
-  nadpisEl.textContent = "HOTOVO! ZETOR JEDE DO STODOLY";
+  const u = aktivniUroven(), model = modelAktivni();
+  nadpisEl.textContent = u.dojezdNadpis;
   const plocha = plochaEl(svgKrajina("statek") +
-    traktorVe("statek", 30, .62, "fin"), "0 0 1000 300");
+    traktorVe("statek", 30, .62, "fin", model), "0 0 1000 300");
   stage.append(plocha);
   const t = plocha.querySelector("#fin");
   t.style.transition = "transform 4s ease-in-out";
@@ -912,22 +1353,27 @@ function finale(){
     zvuk.fanfara();
     plocha.classList.add("mala");
     const karta = document.createElement("div"); karta.className = "karta";
-    karta.innerHTML = `<div class="hvezdy">⭐⭐⭐</div><h2>ZETOR 25</h2>` +
-      KARTA_ZETOR.map(r=>`<p>${r}</p>`).join("");
+    karta.innerHTML = `<div class="hvezdy">⭐⭐⭐</div><h2>${u.nazevKarty}</h2>` +
+      u.karta.map(r=>`<p>${r}</p>`).join("");
     const b = document.createElement("button");
-    b.className = "dal"; b.textContent = "HRÁT ZNOVU ↺";
-    b.onclick = znovu;
+    b.className = "dal"; b.textContent = "MENU ÚROVNÍ ↺";
+    b.onclick = ()=>{ zvuk.klik(); domu(); };
     stage.append(karta, b);
-    rekni(KARTA_HLAS);
+    rekni(u.kartaHlas);
   }, 4200);
 }
 
 /* ---------- ovládání ---------- */
 function znovu(){
-  state.etapa = 0; state.krok = 0; state.dily = []; state.nateno = {};
+  state.postup[state.uroven] = vychoziPostup();
   uloz(); kresli();
 }
-document.getElementById("btn-znovu").onclick = ()=>{ zvuk.klik(); znovu(); };
+function domu(){
+  state.uroven = null;
+  uloz(); kresli();
+}
+btnZnovu.onclick = ()=>{ zvuk.klik(); znovu(); };
+btnDomu.onclick = ()=>{ zvuk.klik(); domu(); };
 document.getElementById("btn-zvuk").onclick = (e)=>{
   zvukZap = !zvukZap;
   e.currentTarget.textContent = zvukZap ? "🔊" : "🔇";
@@ -943,5 +1389,5 @@ document.addEventListener("pointerdown", function odemkni(){
 }, { once:true });
 
 nacti();
-if(state.etapa >= ETAPY.length) znovu(); else kresli();
+kresli();
 </script>
