@@ -35,6 +35,18 @@ html,body{margin:0;height:100%;overflow:hidden;
    doleva (dlouhý odstavec se na střed čte špatně) a obrázek menší. */
 .povidka.dlouha{font-size:clamp(15px,2.3vw,23px);line-height:1.45;max-width:44ch;text-align:left}
 .plocha.nizka{--svgmax:30vh}
+/* postava přijde do obrazu a promluví — vypravěč v čtenářských úrovních
+   mlčí, ale babička nebo děda mluví nahlas (text čte dítě, repliku slyší) */
+.mluvi{display:flex;align-items:flex-end;gap:8px;max-width:min(94vw,720px);
+  animation:prichazi .9s ease-out both}
+.mluvi svg{height:clamp(80px,15vh,140px);width:auto;flex:0 0 auto}
+.bublina{position:relative;background:#fff;border-radius:16px;padding:10px 16px;margin-bottom:34px;
+  font-size:clamp(15px,2.4vw,24px);font-weight:800;letter-spacing:1px;line-height:1.3;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);animation:bublina .35s .8s both}
+.bublina::before{content:"";position:absolute;left:-13px;bottom:14px;
+  border-style:solid;border-width:8px 14px 8px 0;border-color:transparent #fff transparent transparent}
+@keyframes prichazi{from{opacity:0;transform:translateX(-80px)}to{opacity:1;transform:none}}
+@keyframes bublina{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
 
 /* ---------- tlačítka ---------- */
 .volby{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
@@ -161,6 +173,9 @@ html,body{margin:0;height:100%;overflow:hidden;
   .povidka{font-size:15px;line-height:1.28;padding:7px 14px;max-width:54ch}
   .povidka.dlouha{font-size:14px;line-height:1.3;max-width:76ch}
   .plocha.nizka{--svgmax:19vh}
+  .mluvi svg{height:46px}
+  .bublina{font-size:13px;padding:5px 10px;margin-bottom:8px}
+  .bublina::before{left:-9px;bottom:6px;border-width:5px 9px 5px 0}
   .zadani{font-size:15px;line-height:1.25;max-width:34ch}
   .volba{font-size:16px;min-height:44px;min-width:70px;padding:8px 18px}
   .dal{font-size:16px;min-height:44px;padding:9px 26px}
@@ -257,15 +272,18 @@ if(window.speechSynthesis){
   pripravHlas();
   speechSynthesis.onvoiceschanged = pripravHlas;
 }
-function rekni(text){
+/* `postava` = mluví babička/děda/kluk (vlastní výška hlasu). Úroveň
+   s `bezHlasu` umlčí jen vypravěče — postavy mluví dál. */
+function rekni(text, postava){
   if(!hlasZap || !text || !window.speechSynthesis) return;
-  if(state.uroven && aktivniUroven().bezHlasu) return;   // čtenářská úroveň: čte dítě samo
+  if(!postava && state.uroven && aktivniUroven().bezHlasu) return;   // text čte dítě samo
   pripravHlas();
   if(!ceskyHlas) return;              // bez českého hlasu radši mlčet
   try{
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(String(text).replace(/\n/g, " "));
-    u.voice = ceskyHlas; u.lang = ceskyHlas.lang; u.rate = .9; u.pitch = 1.05;
+    u.voice = ceskyHlas; u.lang = ceskyHlas.lang;
+    u.rate = postava ? postava.rate : .9; u.pitch = postava ? postava.pitch : 1.05;
     speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -1025,7 +1043,8 @@ const ETAPY_U5 = [
     "JE ZÁŘÍ A HROZNY VE VINOHRADU U TÝNCE JSOU SLADKÉ.\nDĚDA ŘÍKÁ: ZAČÍNÁ VINOBRANÍ!\nDNES BUDEŠ POMÁHAT A HLAVNĚ POČÍTAT.\nZAPŘÁHNI K ZETORU VLEČKU NA BEDNY." },
   { typ:"zaprah", nastroj:"vlecka", krajina:"vinohrad", popis:"ZAPŘÁHNI VLEČKU NA BEDNY" },
   { typ:"poctyPsani", a:12, b:7, op:"+", text:"NA VINOBRANÍ PŘIŠLO 12 SBĚRAČŮ.\nPOTOM PŘIŠLO JEŠTĚ 7 SOUSEDŮ.\nKOLIK LIDÍ SBÍRÁ HROZNY?" },
-  { typ:"spocitej", co:"hrozen", pocet:9, otazka:"KOLIK HROZNŮ VISÍ NA PRVNÍM KERU?" }
+  { typ:"spocitej", co:"hrozen", pocet:9, otazka:"KOLIK HROZNŮ VISÍ NA PRVNÍM KERU?",
+    rekne:{ kdo:"deda", text:"POJĎ SEM! KOLIK HROZNŮ VISÍ NA PRVNÍM KERU?", hlas:"Pojď sem! Kolik hroznů visí na prvním keru?" } }
 ]},
 { ikona:"✂️", stitek:"SBĚR", nazev:"2. STŘÍHÁME HROZNY", kroky:[
   { typ:"povidka", krajina:"vinohrad", text:
@@ -1046,14 +1065,18 @@ const ETAPY_U5 = [
 { ikona:"🐝", stitek:"VOSY", nazev:"4. VOSY NA BEDNĚ", kroky:[
   { typ:"povidka", krajina:"vinohrad", text:
     "NA SLADKÉ HROZNY PŘILETĚLY VOSY.\nDĚDA ŘÍKÁ: NEMÁVEJ RUKAMA.\nKDYŽ VOSY NEZLOBÍŠ, ODLETÍ SAMY.\nMEZITÍM JE MŮŽEŠ SPOČÍTAT." },
-  { typ:"spocitej", co:"vosa", pocet:11, otazka:"KOLIK VOS SEDÍ NA BEDNĚ?" },
+  { typ:"spocitej", co:"vosa", pocet:11, otazka:"KOLIK VOS SEDÍ NA BEDNĚ?",
+    rekne:{ kdo:"deda", text:"PSST, NEMÁVEJ. KOLIK VOS SEDÍ NA BEDNĚ?", hlas:"Psst, nemávej. Kolik vos sedí na bedně?" } },
   { typ:"poctyPsani", a:11, b:5, op:"−", text:"NA BEDNĚ SEDÍ 11 VOS.\nODLETĚLO JICH 5.\nKOLIK JICH TAM JEŠTĚ JE?" },
   { typ:"pocty", a:6, b:13, op:"+", text:"NA BEDNĚ ZŮSTALO 6 VOS.\nPŘILETĚLO DALŠÍCH 13.\nKOLIK VOS JE NA BEDNĚ TEĎ?" }
 ]},
 { ikona:"🥧", stitek:"SVAČINA", nazev:"5. BABIČČINY BUCHTY", kroky:[
   { typ:"povidka", krajina:"vinohrad", text:
-    "V POLEDNE PŘIVEZLA MAMINKA SVAČINU OD BABIČKY.\nV KOŠÍKU JSOU BUCHTY S POVIDLY.\nKAŽDÝ SBĚRAČ DOSTANE JEDNU.\nPOMOZ S POČÍTÁNÍM, AŤ NA NIKOHO NEZAPOMENEME." },
-  { typ:"spocitej", co:"buchta", pocet:24, otazka:"KOLIK BUCHET JE V KOŠÍKU?" },
+    "V POLEDNE PŘIVEZLA MAMINKA DO VINOHRADU BABIČKU.\nBABIČKA SI SEDLA POD JABLOŇ NA KRAJI ŘÁDKU.\nV KOŠÍKU MÁ BUCHTY S POVIDLY.\nKAŽDÝ SBĚRAČ DOSTANE JEDNU." },
+  { typ:"spocitej", co:"jablko", pocet:12, pozadi:"strom", otazka:"KOLIK JABLÍČEK JE NA JABLONI?",
+    rekne:{ kdo:"babicka", text:"AHOJ! KOLIK MÁM NA STROMĚ JABLÍČEK?", hlas:"Ahoj! Kolik mám na stromě jablíček?" } },
+  { typ:"spocitej", co:"buchta", pocet:24, otazka:"KOLIK BUCHET JE V KOŠÍKU?",
+    rekne:{ kdo:"babicka", text:"UPEKLA JSEM BUCHTY. SPOČÍTÁŠ MI JE?", hlas:"Upekla jsem buchty. Spočítáš mi je?" } },
   { typ:"poctyPsani", a:24, b:19, op:"−", text:"V KOŠÍKU JE 24 BUCHET.\nSBĚRAČŮ JE 19.\nKOLIK BUCHET ZBUDE?" },
   { typ:"cteni", otazka:"ZBUDE BUCHTA I PRO TEBE?",
     volby:["ANO ZBUDE 5 BUCHET","NE ŽÁDNÁ","ZBUDE 100 BUCHET"], spravne:0, krajina:"vinohrad" }
@@ -1070,7 +1093,8 @@ const ETAPY_U5 = [
     "VŠECHNY HROZNY JSOU SKLIZENÉ.\nZETOR VEZE PLNOU VLEČKU DO TVRDONIC KE SKLEPU.\nVE SKLEPĚ JE CHLADNO I V LÉTĚ.\nDĚDA TAM Z HROZNŮ VYLISUJE SLADKOU ŠŤÁVU.\nŘÍKÁ SE JÍ MOŠT." },
   { typ:"jizda", krajina:"sklep", text:"ZETOR VEZE HROZNY KE SKLEPU" },
   { typ:"poctyPsani", a:13, b:9, op:"+", text:"DĚDA NATOČIL 13 LAHVÍ MOŠTU.\nPAK JEŠTĚ 9.\nKOLIK LAHVÍ MOŠTU MÁ?" },
-  { typ:"spocitej", co:"sklenice", pocet:16, otazka:"KOLIK SKLENIC MOŠTU STOJÍ NA STOLE?" }
+  { typ:"spocitej", co:"sklenice", pocet:16, otazka:"KOLIK SKLENIC MOŠTU STOJÍ NA STOLE?",
+    rekne:{ kdo:"babicka", text:"NALILA JSEM MOŠT. KOLIK SKLENIC STOJÍ NA STOLE?", hlas:"Nalila jsem mošt. Kolik sklenic stojí na stole?" } }
 ]},
 { ikona:"🎉", stitek:"DOMŮ", nazev:"8. SLAVNOST A DOMŮ", kroky:[
   { typ:"povidka", krajina:"tvrdonice", text:
@@ -1100,7 +1124,8 @@ const ETAPY_U6 = [
   { typ:"cteni", otazka:"CO LEŽELO RÁNO NAD VINOHRADEM?",
     volby:["MLHA","SNÍH","DRAK"], spravne:0, krajina:"vinohrad" },
   { typ:"cteni", otazka:"JAKÉ BYLY HROZNY?",
-    volby:["SLADKÉ A MODRÉ","KYSELÉ A ZELENÉ","ČOKOLÁDOVÉ"], spravne:0, krajina:"vinohrad" },
+    volby:["SLADKÉ A MODRÉ","KYSELÉ A ZELENÉ","ČOKOLÁDOVÉ"], spravne:0, krajina:"vinohrad",
+    rekne:{ kdo:"deda", text:"DOBRÉ RÁNO! JAKÉ JSOU LETOS HROZNY?", hlas:"Dobré ráno! Jaké jsou letos hrozny?" } },
   { typ:"pismena", slovo:"BOBULE", napoveda:"CO DĚDA RÁNO OCHUTNAL?" }
 ]},
 { ikona:"🐦", stitek:"ŠPAČCI", nazev:"2. HEJNO ŠPAČKŮ", kroky:[
@@ -1127,7 +1152,8 @@ const ETAPY_U6 = [
   { typ:"cteni", otazka:"CO ZAPISOVALA BABIČKA DO SEŠITU?",
     volby:["KAŽDOU PLNOU BEDNU","RECEPT NA PIZZU","JMÉNA VOS"], spravne:0, krajina:"vinohrad" },
   { typ:"cteni", otazka:"CO MÁŠ DĚLAT, KDYŽ KOLEM LETÍ VOSA?",
-    volby:["STÁT V KLIDU","MÁVAT RUKAMA","KŘIČET"], spravne:0, krajina:"vinohrad" },
+    volby:["STÁT V KLIDU","MÁVAT RUKAMA","KŘIČET"], spravne:0, krajina:"vinohrad",
+    rekne:{ kdo:"babicka", text:"AHOJ! POZOR, LETÍ KOLEM TEBE VOSA.", hlas:"Ahoj! Pozor, letí kolem tebe vosa." } },
   { typ:"poctyPsani", a:15, b:9, op:"+", text:"BABIČKA ZAPSALA DOPOLEDNE 15 BEDEN\nA ODPOLEDNE 9.\nKOLIK BEDEN JE V SEŠITĚ?" }
 ]},
 { ikona:"🌧️", stitek:"BLÁTO", nazev:"5. KOLO V BLÁTĚ", kroky:[
@@ -1290,11 +1316,23 @@ function kresli(){
   cestaEl.style.display = "flex";
   kresliCestu();
   const u = aktivniUroven(), s = S();
-  btnHlas.style.display = u.bezHlasu ? "none" : "";
   if(s.etapa >= u.etapy.length) return finale();
   const e = u.etapy[s.etapa], k = e.kroky[s.krok];
   nadpisEl.textContent = e.nazev;
   KROKY[k.typ](k);
+  /* replika postavy jde ke kterémukoli kroku: nahoru na scénu + nahlas */
+  if(k.rekne){
+    const tah = ++kresba;
+    stage.prepend(mluvi(k.rekne));
+    setTimeout(()=>{ if(tah === kresba) rekni(k.rekne.hlas, POSTAVY[k.rekne.kdo]); }, 800);
+  }
+}
+let kresba = 0;   // pořadí překreslení — opožděná replika nesmí mluvit do dalšího kroku
+function mluvi(r){
+  const d = document.createElement("div"); d.className = "mluvi";
+  d.innerHTML = `<svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">${POSTAVY[r.kdo].svg}</svg>
+    <div class="bublina">${r.text}</div>`;
+  return d;
 }
 function kresliCestu(){
   cestaEl.innerHTML = "";
@@ -1339,12 +1377,52 @@ function plochaEl(html, vb){
   p.innerHTML = obal(html, vb); usadPomer(p, vb); return p;
 }
 
-/* ---------- 1) příběhový panel ---------- */
+/* ---------- postavy (kresba 100×160, nohy dole na y=156) ---------- */
+const POSTAVY = {
+  babicka: { pitch:1.25, rate:.85, svg:`
+    <path d="M82 90 L88 156" stroke="#8d99a6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M75 92 h13" stroke="#8d99a6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M28 154 L36 80 Q50 71 64 80 L72 154z" fill="#8f3b5a"/>
+    <path d="M40 92 h20 l4 60 h-28z" fill="#f2ead6"/>
+    <path d="M64 86 L80 96" stroke="#f1c9a5" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="50" cy="54" r="20" fill="#f1c9a5"/>
+    <path d="M28 58 Q28 28 50 27 Q72 28 72 58 Q66 42 50 41 Q34 42 28 58z" fill="#c0392b"/>
+    <path d="M44 72 l-6 10 M56 72 l6 10" stroke="#c0392b" stroke-width="4"/>
+    <circle cx="43" cy="55" r="2.3" fill="#2d3339"/><circle cx="57" cy="55" r="2.3" fill="#2d3339"/>
+    <circle cx="38" cy="62" r="3.5" fill="#f2a08a"/><circle cx="62" cy="62" r="3.5" fill="#f2a08a"/>
+    <path d="M43 64 q7 6 14 0" stroke="#7a4a3a" stroke-width="2.5" fill="none"/>` },
+  deda: { pitch:.75, rate:.9, svg:`
+    <rect x="36" y="118" width="11" height="38" fill="#4a3728"/><rect x="53" y="118" width="11" height="38" fill="#4a3728"/>
+    <path d="M30 124 L34 78 Q50 70 66 78 L70 124z" fill="#3d6b3a"/>
+    <path d="M66 84 L76 112" stroke="#3d6b3a" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="50" cy="54" r="19" fill="#f1c9a5"/>
+    <rect x="24" y="36" width="52" height="7" rx="3" fill="#35502f"/>
+    <path d="M32 38 l5 -17 h26 l5 17z" fill="#35502f"/>
+    <path d="M62 24 q10 -10 6 -20" stroke="#7a6a4a" stroke-width="3" fill="none"/>
+    <circle cx="43" cy="53" r="2.3" fill="#2d3339"/><circle cx="57" cy="53" r="2.3" fill="#2d3339"/>
+    <path d="M40 62 q10 -6 20 0 q-10 6 -20 0z" fill="#dcdcdc"/>` },
+  kluk: { pitch:1.45, rate:1, svg:`
+    <rect x="38" y="122" width="10" height="34" fill="#f1c9a5"/><rect x="52" y="122" width="10" height="34" fill="#f1c9a5"/>
+    <rect x="34" y="112" width="32" height="18" rx="4" fill="#3a5a8c"/>
+    <path d="M32 116 L35 82 Q50 75 65 82 L68 116z" fill="#e0473a"/>
+    <circle cx="50" cy="62" r="17" fill="#f1c9a5"/>
+    <path d="M33 58 Q34 40 50 40 Q66 40 67 58z" fill="#2f5c9e"/><rect x="58" y="52" width="18" height="6" rx="3" fill="#2f5c9e"/>
+    <circle cx="44" cy="63" r="2.2" fill="#2d3339"/><circle cx="56" cy="63" r="2.2" fill="#2d3339"/>
+    <path d="M44 70 q6 5 12 0" stroke="#7a4a3a" stroke-width="2.5" fill="none"/>` }
+};
+function postavaVe(krajina, p){
+  const sc = p.sc || .6, y = (ZEM[krajina] || 276) - 156*sc;
+  return `<g transform="translate(${p.x},${y}) scale(${sc})">${POSTAVY[p.kdo].svg}</g>`;
+}
+
+/* ---------- 1) příběhový panel ----------
+   `bezTraktoru` — scéna jen s postavami (dobrodružství, kde traktor nehraje) */
 KROKY.povidka = function(k){
   const kamaradi = (k.kamaradi || []).map(f=>
     traktorVe(k.krajina, f.x, f.sc, null, f.model, lakModelu(f.model, f.lak))).join("");
+  const postavy = (k.postavy || []).map(p=>postavaVe(k.krajina, p)).join("");
   const obr = plochaEl(svgKrajina(k.krajina) + kamaradi +
-    traktorVe(k.krajina, 110, .46, null, modelAktivni()), "0 0 1000 300");
+    (k.bezTraktoru ? "" : traktorVe(k.krajina, 110, .46, null, modelAktivni())) + postavy, "0 0 1000 300");
   const p = document.createElement("div"); p.className = "povidka"; p.textContent = k.text;
   if(aktivniUroven().dlouheTexty){ obr.classList.add("nizka"); p.classList.add("dlouha"); }
   const b = document.createElement("button");
@@ -1560,15 +1638,20 @@ const VECI = {
   buchta: `<rect x="-22" y="-12" width="44" height="26" rx="9" fill="#e0b464"/>
     <ellipse cx="0" cy="-8" rx="17" ry="6" fill="#c98a3a"/><circle cx="0" cy="-8" r="4" fill="#4a2a3a"/>`,
   sklenice: `<path d="M-14 -22 h28 l-4 42 h-20z" fill="#eef6fa" stroke="#8aa4b0" stroke-width="2"/>
-    <path d="M-12 -6 h24 l-3 24 h-18z" fill="#e6c25a"/>`
+    <path d="M-12 -6 h24 l-3 24 h-18z" fill="#e6c25a"/>`,
+  jablko: `<path d="M0 -14 v-7" stroke="#6b5030" stroke-width="3"/><ellipse cx="7" cy="-19" rx="7" ry="3.5" fill="#3f7a3a"/>
+    <circle cx="0" cy="0" r="15" fill="#d9412b"/><circle cx="-5" cy="-5" r="4" fill="#f08a6e"/>`
 };
 KROKY.spocitej = function(k){
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.otazka;
   /* kresba je jen tak vysoká, kolik je řad — jinak by na telefonu naležato
      prázdné místo vytlačilo číselník pod obrazovku */
   const rady = Math.ceil(k.pocet / 10), sloupcu = Math.min(k.pocet, 10);
-  const vyska = rady*96 + 24, rozpeti = (sloupcu-1)*88 + (sloupcu > 5 ? 50 : 0);
-  let s = `<rect x="0" y="0" width="1000" height="${vyska}" fill="#f6efd9"/>`;
+  const strom = k.pozadi === "strom", kmen = strom ? 56 : 0;
+  const vyska = rady*96 + 24 + kmen, rozpeti = (sloupcu-1)*88 + (sloupcu > 5 ? 50 : 0);
+  let s = `<rect x="0" y="0" width="1000" height="${vyska}" fill="${strom ? "#9ccdec" : "#f6efd9"}"/>`;
+  if(strom) s += `<rect x="470" y="${vyska-kmen-10}" width="60" height="${kmen+10}" fill="#6b4a2e"/>
+    <ellipse cx="500" cy="${(vyska-kmen)/2}" rx="${rozpeti/2+90}" ry="${(vyska-kmen)/2+4}" fill="#4f9a3f"/>`;
   for(let i=0;i<k.pocet;i++){
     const c = i % 10, r = Math.floor(i / 10);
     const x = 500 - rozpeti/2 + c*88 + (c >= 5 ? 50 : 0), y = 64 + r*96;
@@ -1576,7 +1659,9 @@ KROKY.spocitej = function(k){
   }
   const plocha = plochaEl(s, `0 0 1000 ${vyska}`);
   plocha.dataset.pocet = k.pocet;
-  stage.append(z, plocha, ...ciselnik(k.pocet));
+  /* když se ptá postava, otázka je v její bublině — nadpis by ji zdvojil */
+  if(k.rekne){ plocha.classList.add("nizka"); stage.append(plocha, ...ciselnik(k.pocet)); }
+  else stage.append(z, plocha, ...ciselnik(k.pocet));
 };
 
 /* číselník: dítě číslo vyťuká samo a potvrdí ✓; špatně = jen smazat, nic víc */
