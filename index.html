@@ -183,7 +183,8 @@ html,body{margin:0;height:100%;overflow:hidden;
   .uroven-karta p{font-size:10px}
   .uroven-karta .stav{font-size:10px;padding:3px 8px;margin-top:5px}
   .vstup{min-width:56px;min-height:40px;font-size:22px}
-  .pad{max-width:220px;gap:6px}
+  /* číselník do dvou řádků po šesti — ve čtyřech by ✓ spadlo pod obrazovku */
+  .pad{max-width:340px;gap:6px;grid-template-columns:repeat(6,1fr)}
   .cislo{font-size:16px;padding:8px 0}
 }
 </style>
@@ -202,12 +203,13 @@ html,body{margin:0;height:100%;overflow:hidden;
 
 <script>
 /* ==================================================================
-   TRAKTORY NA PODLUŽÍ — rozcestník + 4 učící úrovně pro první čtení
+   TRAKTORY NA PODLUŽÍ — rozcestník + 6 učících úrovní pro první čtení
    a počítání (2. třída ZŠ)
    Jeden soubor, žádné závislosti, funguje offline z tabletu.
    Úrovně: ZETOR 25 (den na Podluží) / TZ-4K-14 (technika, malý
    kloubový traktor) / ZETOR 50 SUPER (dědův traktor, rodinný příběh) /
-   NOVÁ STODOLA (čtenářská — deset stran příběhu, traktory stavějí spolu)
+   NOVÁ STODOLA (čtenářská — deset stran příběhu, traktory stavějí spolu) /
+   VINOBRANÍ (počítání s dědou) / MALÝ TZ NA VINOBRANÍ (čtenářská)
    Mechaniky: skládačka / lakování / jízda / čtení / písmena /
    počty (výběr) / počty (napiš sám) — beze změny z prvního dema
    ================================================================== */
@@ -524,6 +526,18 @@ function svgKrajina(typ){
     ${[70,210,350,490,630,770,910].map(x=>strom(x,244,58,"#4a8f3f")).join("")}
     ${[140,280,420,560,700,840].map(x=>strom(x,222,46,"#5aa54a")).join("")}` + cesta;
   }
+  if(typ === "sklep"){
+    /* vinné sklepy v Tvrdonicích: bílé štíty s klenutými dveřmi pod kopcem s révou */
+    const sklep = (x)=>`<g><path d="M${x} 232 V160 L${x+80} 116 L${x+160} 160 V232z" fill="#f4eee0"/>
+      <rect x="${x}" y="218" width="160" height="14" fill="#6a8fb5"/>
+      <path d="M${x+52} 232 V186 a28 28 0 0 1 56 0 V232z" fill="#6b4a26"/>
+      <path d="M${x+80} 160 v72" stroke="#4a3220" stroke-width="3"/>
+      <circle cx="${x+80}" cy="142" r="9" fill="#6a8fb5"/></g>`;
+    return obloha + `<path d="M0 232 Q260 140 520 168 Q780 110 1000 150 L1000 300 L0 300z" fill="#7fae4a"/>
+      ${[620,680,740,800,860,920].map(x=>`<rect x="${x}" y="${150-(x-620)*.04}" width="5" height="22" fill="#6b5030"/>
+        <ellipse cx="${x+3}" cy="${150-(x-620)*.04}" rx="16" ry="10" fill="#3f7a3a"/>`).join("")}` +
+      zem() + sklep(520) + sklep(760) + strom(90,232,80,"#3f7a3a") + cesta;
+  }
   if(/^stavba\d$/.test(typ))
     return obloha + zem() + strom(70,232,84,"#3f7a3a") + svgStavba(+typ.slice(6)) + cesta;
   return obloha + zem();
@@ -576,7 +590,7 @@ function svgStavba(n){
 /* Kde v které krajině leží zem (aby traktor nikdy neplaval ve vzduchu).
    Traktor má spodek kol v lokálních souřadnicích dané v MODELY[x].spodekKol. */
 const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276, sad:276,
-              stavba0:276, stavba1:276, stavba2:276, stavba3:276, stavba4:276 };
+              stavba0:276, stavba1:276, stavba2:276, stavba3:276, stavba4:276, sklep:276 };
 /* `nateno` jen pro kamarády v příběhu — hráčův traktor bere nátěr z postupu */
 function traktorVe(krajina, x, sc, id, model, nateno){
   const m = MODELY[model || "zetor"];
@@ -1001,6 +1015,168 @@ const KARTA_PARTA = [
 ];
 
 /* ==================================================================
+   ÚROVEŇ 5 — VINOBRANÍ: počítání s dědou
+   Hra na počty. Krátké texty, hodně příkladů a nová mechanika `spocitej`
+   (spočítej věci na obrázku). Hrdina je dědův Zetor 50 Super.
+   ================================================================== */
+const ETAPY_U5 = [
+{ ikona:"🍇", stitek:"VINOHRAD", nazev:"1. ZAČÍNÁ VINOBRANÍ", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "JE ZÁŘÍ A HROZNY VE VINOHRADU U TÝNCE JSOU SLADKÉ.\nDĚDA ŘÍKÁ: ZAČÍNÁ VINOBRANÍ!\nDNES BUDEŠ POMÁHAT A HLAVNĚ POČÍTAT.\nZAPŘÁHNI K ZETORU VLEČKU NA BEDNY." },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"vinohrad", popis:"ZAPŘÁHNI VLEČKU NA BEDNY" },
+  { typ:"poctyPsani", a:12, b:7, op:"+", text:"NA VINOBRANÍ PŘIŠLO 12 SBĚRAČŮ.\nPOTOM PŘIŠLO JEŠTĚ 7 SOUSEDŮ.\nKOLIK LIDÍ SBÍRÁ HROZNY?" },
+  { typ:"spocitej", co:"hrozen", pocet:9, otazka:"KOLIK HROZNŮ VISÍ NA PRVNÍM KERU?" }
+]},
+{ ikona:"✂️", stitek:"SBĚR", nazev:"2. STŘÍHÁME HROZNY", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "SBĚRAČI STŘÍHAJÍ HROZNY NŮŽKAMI.\nKAŽDÝ HROZEN OPATRNĚ POLOŽÍ DO KBELÍKU.\nPLNÝ KBELÍK SE VYSYPE DO BEDNY.\nSPOČÍTEJ, KOLIK UŽ JICH MÁME." },
+  { typ:"spocitej", co:"hrozen", pocet:17, otazka:"KOLIK HROZNŮ JE V KBELÍKU?" },
+  { typ:"pocty", a:17, b:8, op:"−", text:"V KBELÍKU BYLO 17 HROZNŮ.\nSBĚRAČI JICH 8 SNĚDLI.\nKOLIK JICH ZBYLO?" },
+  { typ:"poctyPsani", a:9, b:9, op:"+", text:"JEDEN KBELÍK MÁ 9 HROZNŮ.\nDRUHÝ KBELÍK TAKY 9.\nKOLIK JE TO DOHROMADY?" }
+]},
+{ ikona:"📦", stitek:"BEDNY", nazev:"3. NALOŽ BEDNY", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "BEDNY JSOU PLNÉ A TĚŽKÉ.\nDĚDŮV ZETOR PŘIJEL AŽ K ŘÁDKU.\nNALOŽ BEDNY NA VLEČKU\nA POČÍTEJ S NÁMI." },
+  { typ:"sber", pocet:6, krajina:"vinohrad", popis:"KLIKNI NA BEDNU S HROZNY A NALOŽ JI" },
+  { typ:"spocitej", co:"bedna", pocet:14, otazka:"KOLIK BEDEN STOJÍ U CESTY?" },
+  { typ:"poctyPsani", a:14, b:6, op:"+", text:"NA VLEČCE JE 14 BEDEN.\nDĚDA PŘINESL JEŠTĚ 6.\nKOLIK BEDEN VEZE ZETOR?" },
+  { typ:"cteni", otazka:"CO JE VÍC: 14 BEDEN NEBO 20 BEDEN?",
+    volby:["20 BEDEN","14 BEDEN","OBOJÍ STEJNĚ"], spravne:0, krajina:"vinohrad" }
+]},
+{ ikona:"🐝", stitek:"VOSY", nazev:"4. VOSY NA BEDNĚ", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "NA SLADKÉ HROZNY PŘILETĚLY VOSY.\nDĚDA ŘÍKÁ: NEMÁVEJ RUKAMA.\nKDYŽ VOSY NEZLOBÍŠ, ODLETÍ SAMY.\nMEZITÍM JE MŮŽEŠ SPOČÍTAT." },
+  { typ:"spocitej", co:"vosa", pocet:11, otazka:"KOLIK VOS SEDÍ NA BEDNĚ?" },
+  { typ:"poctyPsani", a:11, b:5, op:"−", text:"NA BEDNĚ SEDÍ 11 VOS.\nODLETĚLO JICH 5.\nKOLIK JICH TAM JEŠTĚ JE?" },
+  { typ:"pocty", a:6, b:13, op:"+", text:"NA BEDNĚ ZŮSTALO 6 VOS.\nPŘILETĚLO DALŠÍCH 13.\nKOLIK VOS JE NA BEDNĚ TEĎ?" }
+]},
+{ ikona:"🥧", stitek:"SVAČINA", nazev:"5. BABIČČINY BUCHTY", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "V POLEDNE PŘIVEZLA MAMINKA SVAČINU OD BABIČKY.\nV KOŠÍKU JSOU BUCHTY S POVIDLY.\nKAŽDÝ SBĚRAČ DOSTANE JEDNU.\nPOMOZ S POČÍTÁNÍM, AŤ NA NIKOHO NEZAPOMENEME." },
+  { typ:"spocitej", co:"buchta", pocet:24, otazka:"KOLIK BUCHET JE V KOŠÍKU?" },
+  { typ:"poctyPsani", a:24, b:19, op:"−", text:"V KOŠÍKU JE 24 BUCHET.\nSBĚRAČŮ JE 19.\nKOLIK BUCHET ZBUDE?" },
+  { typ:"cteni", otazka:"ZBUDE BUCHTA I PRO TEBE?",
+    volby:["ANO ZBUDE 5 BUCHET","NE ŽÁDNÁ","ZBUDE 100 BUCHET"], spravne:0, krajina:"vinohrad" }
+]},
+{ ikona:"📏", stitek:"ŘÁDKY", nazev:"6. KOLIK ŘÁDKŮ ZBÝVÁ", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "VINOHRAD MÁ 30 ŘÁDKŮ RÉVY.\nDOPOLEDNE SBĚRAČI SKLIDILI 16 ŘÁDKŮ.\nODPOLEDNE UŽ JSOU UNAVENÍ, ALE NEVZDÁVAJÍ TO.\nDĚDA SE PTÁ: KOLIK JEŠTĚ?" },
+  { typ:"poctyPsani", a:30, b:16, op:"−", text:"VINOHRAD MÁ 30 ŘÁDKŮ.\nSKLIDILI JSME 16.\nKOLIK ŘÁDKŮ ZBÝVÁ?" },
+  { typ:"pocty", a:7, b:7, op:"+", text:"ZA HODINU SKLIDÍME 7 ŘÁDKŮ.\nZA DRUHOU HODINU DALŠÍCH 7.\nKOLIK ŘÁDKŮ TO JE?" },
+  { typ:"pismena", slovo:"RÉVA", napoveda:"NA ČEM ROSTOU HROZNY?" }
+]},
+{ ikona:"🚪", stitek:"SKLEP", nazev:"7. JEDEME DO SKLEPA", kroky:[
+  { typ:"povidka", krajina:"sklep", text:
+    "VŠECHNY HROZNY JSOU SKLIZENÉ.\nZETOR VEZE PLNOU VLEČKU DO TVRDONIC KE SKLEPU.\nVE SKLEPĚ JE CHLADNO I V LÉTĚ.\nDĚDA TAM Z HROZNŮ VYLISUJE SLADKOU ŠŤÁVU.\nŘÍKÁ SE JÍ MOŠT." },
+  { typ:"jizda", krajina:"sklep", text:"ZETOR VEZE HROZNY KE SKLEPU" },
+  { typ:"poctyPsani", a:13, b:9, op:"+", text:"DĚDA NATOČIL 13 LAHVÍ MOŠTU.\nPAK JEŠTĚ 9.\nKOLIK LAHVÍ MOŠTU MÁ?" },
+  { typ:"spocitej", co:"sklenice", pocet:16, otazka:"KOLIK SKLENIC MOŠTU STOJÍ NA STOLE?" }
+]},
+{ ikona:"🎉", stitek:"DOMŮ", nazev:"8. SLAVNOST A DOMŮ", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "VEČER JE V OBCI SLAVNOST VINOBRANÍ.\nHRAJE MUZIKA A LIDÉ SI ZPÍVAJÍ.\nDĚDA ŘÍKÁ: DNES JSI POČÍTAL LÍP NEŽ KALKULAČKA!\nPAK POJEDETE SE ZETOREM DOMŮ." },
+  { typ:"poctyPsani", a:16, b:9, op:"−", text:"NA STOLE BYLO 16 SKLENIC MOŠTU.\nVYPILI JSME 9.\nKOLIK SKLENIC JE JEŠTĚ PLNÝCH?" },
+  { typ:"pocty", a:22, b:8, op:"+", text:"DNES JSME UJELI 22 KILOMETRŮ\nA DOMŮ JEŠTĚ 8.\nKOLIK KILOMETRŮ TO JE?" },
+  { typ:"pismena", slovo:"MOŠT", napoveda:"JAK SE ŘÍKÁ SLADKÉ ŠŤÁVĚ Z HROZNŮ?" }
+]}
+];
+const KARTA_VINOBRANI = [
+  "VINOBRANÍ JE SKLIZEŇ HROZNŮ. NA JIŽNÍ MORAVĚ BÝVÁ V ZÁŘÍ A V ŘÍJNU.",
+  "PODLUŽÍ, KDE LEŽÍ TVRDONICE, JE VINAŘSKÝ KRAJ.",
+  "HROZNY SE STŘÍHAJÍ NŮŽKAMI DO KBELÍKŮ A BEDEN.",
+  "Z HROZNŮ SE VYLISUJE SLADKÁ ŠŤÁVA — MOŠT.",
+  "DNES JSI SČÍTAL, ODČÍTAL, POČÍTAL VĚCI I POROVNÁVAL."
+];
+
+/* ==================================================================
+   ÚROVEŇ 6 — MALÝ TZ NA VINOBRANÍ (čtenářská)
+   Osm stran příběhu. Hrdina je malý TZ — projede úzkými řádky, kam
+   se velký Zetor nevejde; Zetor mu zase pomůže z bláta.
+   ================================================================== */
+const ETAPY_U6 = [
+{ ikona:"🌫️", stitek:"RÁNO", nazev:"1. RÁNO VE VINOHRADU", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "BYLO ZÁŘIJOVÉ RÁNO A NAD VINOHRADEM U TÝNCE LEŽELA MLHA.\nMALÝ TZ ČTYŘI KÁČKO ČTRNÁCT STÁL NA KRAJI CESTY A ČEKAL.\nDĚDA SI HO PŮJČIL OD OBCE NA CELÝ DEN.\nHROZNY UŽ BYLY SLADKÉ A MODRÉ JAKO NOČNÍ OBLOHA.\nDĚDA OCHUTNAL JEDNU BOBULI A USMÁL SE: DNES ZAČNEME SBÍRAT.\nMALÝ TZ RADOSTÍ ZABUBLAL. NA VINOBRANÍ SE TĚŠIL CELÝ ROK." },
+  { typ:"cteni", otazka:"CO LEŽELO RÁNO NAD VINOHRADEM?",
+    volby:["MLHA","SNÍH","DRAK"], spravne:0, krajina:"vinohrad" },
+  { typ:"cteni", otazka:"JAKÉ BYLY HROZNY?",
+    volby:["SLADKÉ A MODRÉ","KYSELÉ A ZELENÉ","ČOKOLÁDOVÉ"], spravne:0, krajina:"vinohrad" },
+  { typ:"pismena", slovo:"BOBULE", napoveda:"CO DĚDA RÁNO OCHUTNAL?" }
+]},
+{ ikona:"🐦", stitek:"ŠPAČCI", nazev:"2. HEJNO ŠPAČKŮ", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "NAJEDNOU SE NEBE ZATMĚLO. PŘILETĚLO VELIKÉ HEJNO ŠPAČKŮ.\nŠPAČCI MAJÍ HROZNY MOC RÁDI A VYZOBOU TY NEJSLADŠÍ BOBULE.\nDĚDA ZAVOLAL: MALÝ TZ, POMOZ!\nNA VOZÍKU BYLY PLECHOVKY NA PROVÁZKU.\nTRAKTOR SE ROZJEL MEZI ŘÁDKY, PLECHOVKY CINKALY A CHRASTILY.\nŠPAČCI SE LEKLI A ODLETĚLI DALEKO NAD POLE." },
+  { typ:"zaprah", nastroj:"vozik", krajina:"vinohrad", popis:"ZAPŘÁHNI VOZÍK S PLECHOVKAMI" },
+  { typ:"cteni", otazka:"PROČ PŘILETĚLI ŠPAČCI?",
+    volby:["CHTĚLI ZOBAT HROZNY","HLEDALI ZETOR","CHTĚLI SI ZAZPÍVAT"], spravne:0, krajina:"vinohrad" },
+  { typ:"cteni", otazka:"ČÍM TRAKTOR ŠPAČKY VYPLAŠIL?",
+    volby:["CINKAJÍCÍMI PLECHOVKAMI","PÍSNIČKOU","DEŠTNÍKEM"], spravne:0, krajina:"vinohrad" }
+]},
+{ ikona:"✂️", stitek:"ŘÁDKY", nazev:"3. ÚZKÉ ŘÁDKY", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "PAK PŘIŠLI SBĚRAČI S NŮŽKAMI A KBELÍKY.\nŘÁDKY RÉVY JSOU BLÍZKO U SEBE A CESTIČKA MEZI NIMI JE ÚZKÁ.\nDĚDŮV VELKÝ ZETOR 50 SUPER SE TAM NEVEJDE, ZŮSTAL NA CESTĚ.\nALE MALÝ TZ PROJEDE KAŽDÝM ŘÁDKEM. POMÁHÁ MU KLOUB UPROSTŘED.\nSBĚRAČI VYSYPÁVAJÍ PLNÉ KBELÍKY DO BEDEN NA VOZÍKU.\nNALOŽ BEDNY I TY.",
+    kamaradi:[KAM_50(380)] },
+  { typ:"sber", pocet:6, krajina:"vinohrad", vlecka:"vozik", popis:"KLIKNI NA KAŽDOU BEDNU A NALOŽ JI NA VOZÍK" },
+  { typ:"cteni", otazka:"PROČ ZŮSTAL VELKÝ ZETOR NA CESTĚ?",
+    volby:["MEZI ŘÁDKY SE NEVEJDE","BOLÍ HO KOLO","SPAL"], spravne:0, krajina:"vinohrad" },
+  { typ:"pismena", slovo:"NŮŽKY", napoveda:"ČÍM SBĚRAČI STŘÍHAJÍ HROZNY?" }
+]},
+{ ikona:"🐝", stitek:"VOSY", nazev:"4. BABIČKA A VOSY", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "U BÚDY NA KRAJI VINOHRADU SEDĚLA BABIČKA NA LAVIČCE. BERLE MĚLA OPŘENÉ VEDLE SEBE.\nDO SEŠITU ZAPISOVALA KAŽDOU PLNOU BEDNU.\nKOLEM BEDEN BZUČELY VOSY. I ONY MAJÍ RÁDY SLADKOU ŠŤÁVU.\nJEDNO DÍTĚ SE LEKLO A ZAČALO MÁVAT RUKAMA.\nBABIČKA ŘEKLA KLIDNĚ: NEMÁVEJ. KDYŽ BUDEŠ STÁT V KLIDU, VOSA ODLETÍ." },
+  { typ:"cteni", otazka:"CO ZAPISOVALA BABIČKA DO SEŠITU?",
+    volby:["KAŽDOU PLNOU BEDNU","RECEPT NA PIZZU","JMÉNA VOS"], spravne:0, krajina:"vinohrad" },
+  { typ:"cteni", otazka:"CO MÁŠ DĚLAT, KDYŽ KOLEM LETÍ VOSA?",
+    volby:["STÁT V KLIDU","MÁVAT RUKAMA","KŘIČET"], spravne:0, krajina:"vinohrad" },
+  { typ:"poctyPsani", a:15, b:9, op:"+", text:"BABIČKA ZAPSALA DOPOLEDNE 15 BEDEN\nA ODPOLEDNE 9.\nKOLIK BEDEN JE V SEŠITĚ?" }
+]},
+{ ikona:"🌧️", stitek:"BLÁTO", nazev:"5. KOLO V BLÁTĚ", kroky:[
+  { typ:"povidka", krajina:"vinohrad", text:
+    "ODPOLEDNE KRÁTCE ZAPRŠELO A CESTA MEZI ŘÁDKY ZMĚKLA.\nMALÝ TZ VEZL PLNÝ VOZÍK A NAJEDNOU SE ZASTAVIL.\nKOLO SE ZABOŘILO DO BLÁTA. MOTOR BRUČEL, ALE KOLO SE JEN PROTÁČELO.\nTU PŘIJEL PO CESTĚ DĚDŮV ZETOR 50 SUPER.\nDĚDA UVÁZAL LANO A VELKÝ TRAKTOR MALÉHO KAMARÁDA POMALU VYTÁHL.\nMALÝ TZ SI ŘEKL: JÁ POMÁHÁM V ŘÁDCÍCH A ON MNĚ NA CESTĚ.",
+    kamaradi:[KAM_50(380)] },
+  { typ:"cteni", otazka:"PROČ SE MALÝ TZ ZASTAVIL?",
+    volby:["KOLO ZAPADLO DO BLÁTA","DOŠLA MU CHUŤ","POTKAL ŽELVU"], spravne:0, krajina:"vinohrad" },
+  { typ:"cteni", otazka:"KDO MALÝ TZ Z BLÁTA VYTÁHL?",
+    volby:["DĚDŮV ZETOR 50 SUPER","ŠPAČCI","BABIČKA"], spravne:0, krajina:"vinohrad" },
+  { typ:"pismena", slovo:"BLÁTO", napoveda:"DO ČEHO SE ZABOŘILO KOLO?" }
+]},
+{ ikona:"🚪", stitek:"SKLEP", nazev:"6. SKLEP V TVRDONICÍCH", kroky:[
+  { typ:"povidka", krajina:"sklep", text:
+    "VEČER VEZLI HROZNY DO TVRDONIC KE SKLEPU.\nVINNÝ SKLEP JE VYKOPANÝ HLUBOKO V ZEMI. JE TAM POŘÁD STEJNĚ CHLADNO, V LÉTĚ I V ZIMĚ.\nPŘED SKLEPEM STÁL MLÝNEK. ODDĚLUJE BOBULE OD ZELENÝCH STOPEK.\nSTOPKY SE VYSYPOU NA KOMPOST A BOBULE JDOU DO LISU.\nMALÝ TZ PŘIVEZL BEDNY AŽ KE DVEŘÍM.\nDOLŮ PO SCHODECH UŽ JE NOSÍ DĚDA." },
+  { typ:"jizda", krajina:"sklep", text:"MALÝ TZ VEZE HROZNY KE SKLEPU" },
+  { typ:"cteni", otazka:"JAK JE VE SKLEPĚ?",
+    volby:["POŘÁD STEJNĚ CHLADNO","HORKO JAKO NA PLÁŽI","SNĚŽÍ TAM"], spravne:0, krajina:"sklep" },
+  { typ:"cteni", otazka:"CO ODDĚLUJE MLÝNEK?",
+    volby:["BOBULE OD STOPEK","KOLA OD TRAKTORU","VOSY OD HROZNŮ"], spravne:0, krajina:"sklep" }
+]},
+{ ikona:"🧃", stitek:"MOŠT", nazev:"7. LIS A SLADKÝ MOŠT", kroky:[
+  { typ:"povidka", krajina:"sklep", text:
+    "DĚDA NASYPAL BOBULE DO DŘEVĚNÉHO LISU A ZAČAL TOČIT KLIKOU.\nLIS POMALU TLAČIL A ZE ŽLÁBKU ZAČALA TÉCT SLADKÁ ŠŤÁVA.\nTÉHLE ŠŤÁVĚ SE ŘÍKÁ MOŠT.\nDOSPĚLÍ Z MOŠTU UDĚLAJÍ VÍNO, ALE TO MUSÍ VE SKLEPĚ DLOUHO ZRÁT.\nDĚTI DOSTALY MOŠT HNED DO HRNÍČKŮ.\nBYL TAK SLADKÝ, ŽE SE PO NĚM LEPILY PRSTY I PUSA." },
+  { typ:"cteni", otazka:"JAK SE ŘÍKÁ ŠŤÁVĚ, KTERÁ TEČE Z LISU?",
+    volby:["MOŠT","LIMONÁDA","KAKAO"], spravne:0, krajina:"sklep" },
+  { typ:"poctyPsani", a:6, b:7, op:"+", text:"Z PRVNÍ BEDNY NATEKLO 6 HRNÍČKŮ\nA Z DRUHÉ 7.\nKOLIK HRNÍČKŮ MOŠTU TO JE?" },
+  { typ:"pismena", slovo:"LIS", napoveda:"V ČEM DĚDA MAČKAL BOBULE?" }
+]},
+{ ikona:"🎉", stitek:"SLAVNOST", nazev:"8. SLAVNOST VINOBRANÍ", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", text:
+    "V SOBOTU BYLA V OBCI SLAVNOST VINOBRANÍ.\nLIDÉ SI OBLÉKLI KROJE A PO ULICI ŠEL PRŮVOD S MUZIKOU.\nNA KONCI PRŮVODU JEL MALÝ TZ. BYL OZDOBENÝ RÉVOU A STUHAMI.\nNA VOZÍKU VEZL NEJKRÁSNĚJŠÍ HROZNY Z CELÉHO VINOHRADU.\nDĚTI MU MÁVALY A DĚDA NA NĚJ ZATROUBIL ZE SVÉHO ZETORU.\nMALÝ TZ BYL PYŠNÝ. BYL NEJMENŠÍ, ALE NA VINOBRANÍ BYL NEJDŮLEŽITĚJŠÍ.",
+    kamaradi:[KAM_50(380)] },
+  { typ:"cteni", otazka:"ČÍM BYL MALÝ TZ OZDOBENÝ?",
+    volby:["RÉVOU A STUHAMI","BALÓNKY","SVÍČKAMI"], spravne:0, krajina:"tvrdonice" },
+  { typ:"cteni", otazka:"CO VEZL MALÝ TZ V PRŮVODU?",
+    volby:["NEJKRÁSNĚJŠÍ HROZNY","ŠPAČKY","SNĚHULÁKA"], spravne:0, krajina:"tvrdonice" },
+  { typ:"pismena", slovo:"KROJ", napoveda:"CO SI LIDÉ OBLÉKLI NA SLAVNOST?" }
+]}
+];
+const KARTA_TZ_VINO = [
+  "MALÝ TZ-4K-14 MÁ UPROSTŘED KLOUB A OTOČÍ SE NA MALÉM MÍSTĚ.",
+  "ŠPAČCI RÁDI ZOBOU ZRALÉ HROZNY, PROTO JE VINAŘI PLAŠÍ.",
+  "VE VINNÉM SKLEPĚ JE CELÝ ROK SKORO STEJNÁ TEPLOTA.",
+  "MLÝNEK ODDĚLÍ BOBULE OD STOPEK A LIS Z NICH VYMAČKÁ MOŠT.",
+  "VÍNO MUSÍ VE SKLEPĚ DLOUHO ZRÁT."
+];
+
+/* ==================================================================
    ROZCESTNÍK — registr úrovní
    ================================================================== */
 const UROVNE = [
@@ -1016,7 +1192,15 @@ const UROVNE = [
   { klic:"u4", ikona:"🏗️", nazev:"NOVÁ STODOLA", podnazev:"Zetor volá kamarády", model:"zetor",
     lak:"#b5342a", dlouheTexty:true, bezHlasu:true, finaleKrajina:"stavba4",
     etapy: ETAPY_U4, nazevKarty:"PARTA TRAKTORŮ", karta: KARTA_PARTA,
-    dojezdNadpis:"HOTOVO! ZETOR JEDE DO NOVÉ STODOLY" }
+    dojezdNadpis:"HOTOVO! ZETOR JEDE DO NOVÉ STODOLY" },
+  { klic:"u5", ikona:"🔢", nazev:"VINOBRANÍ", podnazev:"Počítání s dědou", model:"zetor",
+    lak:"#2f5c9e", bezHlasu:true, finaleKrajina:"statek",
+    etapy: ETAPY_U5, nazevKarty:"VINOBRANÍ", karta: KARTA_VINOBRANI,
+    dojezdNadpis:"HOTOVO! ZETOR JEDE DOMŮ NA STATEK" },
+  { klic:"u6", ikona:"🍇", nazev:"MALÝ TZ NA VINOBRANÍ", podnazev:"Čtení", model:"tz",
+    lak:"#e07b22", dlouheTexty:true, bezHlasu:true, finaleKrajina:"statek",
+    etapy: ETAPY_U6, nazevKarty:"MALÝ TZ NA VINOBRANÍ", karta: KARTA_TZ_VINO,
+    dojezdNadpis:"HOTOVO! MALÝ TZ JEDE SPÁT" }
 ];
 
 /* ==================================================================
@@ -1355,15 +1539,52 @@ KROKY.pocty = function(k){
 /* ---------- 7b) počty do 30 — napiš číslo sám (úroveň 2 a 3) ---------- */
 KROKY.poctyPsani = function(k){
   const spravne = k.op === "+" ? k.a + k.b : k.a - k.b;
-  let zadano = "";
   const z = document.createElement("div"); z.className = "povidka"; z.textContent = k.text;
   const p = document.createElement("div"); p.className = "priklad";
+  p.textContent = `${k.a} ${k.op} ${k.b} =`;
+  stage.append(z, p, ...ciselnik(spravne));
+  rekni(k.hlas);
+};
+
+/* ---------- 7c) spočítej věci na obrázku a napiš číslo ----------
+   Po deseti v řadě a s mezerou po pěti — dítě se učí počítat po skupinách,
+   ne jen ťukat prstem jednu po druhé. */
+const VECI = {
+  hrozen: `<path d="M0 -30 v8" stroke="#6b5030" stroke-width="4"/><ellipse cx="11" cy="-25" rx="10" ry="5" fill="#3f7a3a"/>
+    ${[[-11,-15],[0,-15],[11,-15],[-6,-4],[6,-4],[0,7]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="#6a3d7a"/>`).join("")}`,
+  vosa: `<ellipse cx="-4" cy="-16" rx="10" ry="7" fill="#dff1fb" opacity=".85"/><ellipse cx="8" cy="-16" rx="10" ry="7" fill="#dff1fb" opacity=".85"/>
+    <ellipse cx="0" cy="0" rx="20" ry="12" fill="#f2c230"/>
+    <path d="M-6 -11 v22 M4 -11 v22" stroke="#222" stroke-width="5"/><circle cx="20" cy="-2" r="7" fill="#222"/>`,
+  bedna: `<rect x="-24" y="-12" width="48" height="30" rx="4" fill="#c98f45" stroke="#6b4a26" stroke-width="3"/>
+    ${[-12,0,12].map(x=>`<circle cx="${x}" cy="-14" r="7" fill="#6a3d7a"/>`).join("")}`,
+  buchta: `<rect x="-22" y="-12" width="44" height="26" rx="9" fill="#e0b464"/>
+    <ellipse cx="0" cy="-8" rx="17" ry="6" fill="#c98a3a"/><circle cx="0" cy="-8" r="4" fill="#4a2a3a"/>`,
+  sklenice: `<path d="M-14 -22 h28 l-4 42 h-20z" fill="#eef6fa" stroke="#8aa4b0" stroke-width="2"/>
+    <path d="M-12 -6 h24 l-3 24 h-18z" fill="#e6c25a"/>`
+};
+KROKY.spocitej = function(k){
+  const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.otazka;
+  /* kresba je jen tak vysoká, kolik je řad — jinak by na telefonu naležato
+     prázdné místo vytlačilo číselník pod obrazovku */
+  const rady = Math.ceil(k.pocet / 10), sloupcu = Math.min(k.pocet, 10);
+  const vyska = rady*96 + 24, rozpeti = (sloupcu-1)*88 + (sloupcu > 5 ? 50 : 0);
+  let s = `<rect x="0" y="0" width="1000" height="${vyska}" fill="#f6efd9"/>`;
+  for(let i=0;i<k.pocet;i++){
+    const c = i % 10, r = Math.floor(i / 10);
+    const x = 500 - rozpeti/2 + c*88 + (c >= 5 ? 50 : 0), y = 64 + r*96;
+    s += `<g transform="translate(${x},${y}) scale(1.6)">${VECI[k.co]}</g>`;
+  }
+  const plocha = plochaEl(s, `0 0 1000 ${vyska}`);
+  plocha.dataset.pocet = k.pocet;
+  stage.append(z, plocha, ...ciselnik(k.pocet));
+};
+
+/* číselník: dítě číslo vyťuká samo a potvrdí ✓; špatně = jen smazat, nic víc */
+function ciselnik(spravne){
+  let zadano = "";
   const vw = document.createElement("div"); vw.className = "vstup-wrap";
   const pad = document.createElement("div"); pad.className = "pad";
-  stage.append(z, p, vw, pad);
-
   function prekresli(){
-    p.textContent = `${k.a} ${k.op} ${k.b} =`;
     vw.innerHTML = `<span class="vstup">${zadano || "?"}</span>`;
   }
   ["1","2","3","4","5","6","7","8","9","⌫","0","✓"].forEach(t=>{
@@ -1388,8 +1609,8 @@ KROKY.poctyPsani = function(k){
     pad.appendChild(b);
   });
   prekresli();
-  rekni(k.hlas);
-};
+  return [vw, pad];
+}
 
 /* ---------- 8) zapřáhnutí nástroje ----------
    Tažený stroj patří ZA traktor (traktor jede vpravo), takže se kreslí
