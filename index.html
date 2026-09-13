@@ -218,13 +218,14 @@ html,body{margin:0;height:100%;overflow:hidden;
 
 <script>
 /* ==================================================================
-   TRAKTORY NA PODLUŽÍ — rozcestník + 6 učících úrovní pro první čtení
+   TRAKTORY NA PODLUŽÍ — rozcestník + 7 učících úrovní pro první čtení
    a počítání (2. třída ZŠ)
    Jeden soubor, žádné závislosti, funguje offline z tabletu.
    Úrovně: ZETOR 25 (den na Podluží) / TZ-4K-14 (technika, malý
    kloubový traktor) / ZETOR 50 SUPER (dědův traktor, rodinný příběh) /
    NOVÁ STODOLA (čtenářská — deset stran příběhu, traktory stavějí spolu) /
-   VINOBRANÍ (počítání s dědou) / MALÝ TZ NA VINOBRANÍ (čtenářská)
+   VINOBRANÍ (počítání s dědou) / MALÝ TZ NA VINOBRANÍ (čtenářská) /
+   DRAKIÁDA (dobrodružství kluka, čtení i počty)
    Mechaniky: skládačka / lakování / jízda / čtení / písmena /
    počty (výběr) / počty (napiš sám) — beze změny z prvního dema
    ================================================================== */
@@ -544,6 +545,16 @@ function svgKrajina(typ){
     ${[70,210,350,490,630,770,910].map(x=>strom(x,244,58,"#4a8f3f")).join("")}
     ${[140,280,420,560,700,840].map(x=>strom(x,222,46,"#5aa54a")).join("")}` + cesta;
   }
+  if(typ === "strniste"){
+    /* sklizené pole za vsí: strniště, balíky slámy, les na obzoru */
+    return obloha +
+      [60,170,280,390,500,610,720,830,940].map((x,i)=>strom(x,184,56+(i%3)*12,"#2f6b2c")).join("") +
+      `<rect x="0" y="176" width="1000" height="124" fill="#d8c27a"/>
+      <g stroke="#b89d52" stroke-width="3">${Array.from({length:40},(_,i)=>
+        `<path d="M${10+i*25} ${196+(i%4)*14} v-9"/>`).join("")}</g>
+      ${[[150,206],[860,212]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="22" fill="#e6cf85" stroke="#b89d52" stroke-width="4"/>
+        <circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="#b89d52" stroke-width="3"/>`).join("")}` + cesta;
+  }
   if(typ === "sklep"){
     /* vinné sklepy v Tvrdonicích: bílé štíty s klenutými dveřmi pod kopcem s révou */
     const sklep = (x)=>`<g><path d="M${x} 232 V160 L${x+80} 116 L${x+160} 160 V232z" fill="#f4eee0"/>
@@ -608,7 +619,7 @@ function svgStavba(n){
 /* Kde v které krajině leží zem (aby traktor nikdy neplaval ve vzduchu).
    Traktor má spodek kol v lokálních souřadnicích dané v MODELY[x].spodekKol. */
 const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276, sad:276,
-              stavba0:276, stavba1:276, stavba2:276, stavba3:276, stavba4:276, sklep:276 };
+              stavba0:276, stavba1:276, stavba2:276, stavba3:276, stavba4:276, sklep:276, strniste:276 };
 /* `nateno` jen pro kamarády v příběhu — hráčův traktor bere nátěr z postupu */
 function traktorVe(krajina, x, sc, id, model, nateno){
   const m = MODELY[model || "zetor"];
@@ -1203,6 +1214,99 @@ const KARTA_TZ_VINO = [
 ];
 
 /* ==================================================================
+   ÚROVEŇ 7 — DRAKIÁDA: kluk a uletěný drak
+   První dobrodružství kluka na vesnici — traktor v něm nehraje. Čtení
+   i počítání, v každé etapě promluví děda, babička nebo kluk.
+   ================================================================== */
+const ETAPY_U7 = [
+{ ikona:"🍂", stitek:"VÍTR", nazev:"1. VÍTR NA KONCI ZÁŘÍ", kroky:[
+  { typ:"povidka", krajina:"tvrdonice", bezTraktoru:true, text:
+    "BYLA SOBOTA NA KONCI ZÁŘÍ A VENKU FOUKAL SILNÝ VÍTR.\nKLUK STÁL U OKNA A DÍVAL SE, JAK SE HOUPOU STROMY.\nPOLE ZA VSÍ UŽ BYLA SKLIZENÁ. ZŮSTALO NA NICH JEN STRNIŠTĚ.\nDO KUCHYNĚ PŘIŠEL DĚDA A USMÁL SE.\nŘEKL: TAKOVÝ VÍTR JE JAKO STVOŘENÝ NA DRAKY.\nPOSTAVÍME SI SPOLU DRAKA A PŮJDEME HO POUŠTĚT NA POLE.",
+    postavy:[{kdo:"kluk", x:300}, {kdo:"deda", x:420}] },
+  { typ:"cteni", otazka:"PROČ JE TENHLE DEN DOBRÝ NA DRAKA?",
+    volby:["FOUKÁ SILNÝ VÍTR","PRŠÍ","JE TMA"], spravne:0, krajina:"tvrdonice",
+    rekne:{ kdo:"deda", text:"AHOJ KLUKU! SLYŠÍŠ, JAK TO VENKU HUČÍ?", hlas:"Ahoj kluku! Slyšíš, jak to venku hučí?" } },
+  { typ:"pismena", slovo:"DRAK", napoveda:"CO SI S DĚDOU POSTAVÍTE?" }
+]},
+{ ikona:"🪚", stitek:"DÍLNA", nazev:"2. STAVÍME DRAKA", kroky:[
+  { typ:"povidka", krajina:"statek", bezTraktoru:true, text:
+    "V DÍLNĚ NAŠEL DĚDA DVĚ ROVNÉ LAŤKY.\nJEDNA BYLA DLOUHÁ A DRUHÁ KRATŠÍ. SVÁZALI JE PROVÁZKEM DO KŘÍŽE.\nNA KŘÍŽ NATÁHLI PAPÍR A OKRAJE PŘILEPILI.\nKLUK NAMALOVAL DRAKOVI VELKÉ OČI A ÚSMĚV.\nPAK DĚDA NAMOTAL DLOUHÝ PROVÁZEK NA NAVIJÁK.\nDRAK UŽ VYPADAL SKORO HOTOVĚ. CHYBĚL MU JEŠTĚ OCAS.",
+    postavy:[{kdo:"kluk", x:260}, {kdo:"deda", x:370}], drak:{ x:490, y:196, sc:.5 } },
+  { typ:"cteni", otazka:"Z ČEHO JE KOSTRA DRAKA?",
+    volby:["ZE DVOU LAŤEK","Z KOSTÍ","ZE ŠPAGET"], spravne:0, krajina:"statek" },
+  { typ:"poctyPsani", a:20, b:10, op:"+", text:"NA NAVIJÁKU BYLO 20 METRŮ PROVÁZKU.\nDĚDA NAVÁZAL JEŠTĚ 10 METRŮ.\nKOLIK METRŮ MÁ PROVÁZEK?",
+    rekne:{ kdo:"deda", text:"PODRŽ MI PROSÍM TEN NAVIJÁK.", hlas:"Podrž mi prosím ten naviják." } }
+]},
+{ ikona:"🎀", stitek:"OCAS", nazev:"3. OCAS Z MAŠLIČEK", kroky:[
+  { typ:"povidka", krajina:"statek", bezTraktoru:true, text:
+    "BEZ OCASU BY SE DRAK VE VZDUCHU TOČIL DOKOLEČKA.\nOCAS HO DRŽÍ ROVNĚ, PODOBNĚ JAKO KORMIDLO LOĎ.\nBABIČKA PŘINESLA BAREVNÉ PAPÍRY A NŮŽKY.\nKLUK STŘÍHAL PROUŽKY A BABIČKA Z NICH SKLÁDALA MAŠLIČKY.\nKAŽDOU MAŠLIČKU PŘIVÁZALI NA PROVÁZEK KOUSEK OD SEBE.\nOCAS BYL NAKONEC DELŠÍ NEŽ KLUK.",
+    postavy:[{kdo:"kluk", x:260}, {kdo:"babicka", x:370}], drak:{ x:500, y:180, sc:.55 } },
+  { typ:"cteni", otazka:"PROČ MUSÍ MÍT DRAK OCAS?",
+    volby:["ABY LETĚL ROVNĚ","ABY BYL TĚŽKÝ","ABY MOHL ŠTĚKAT"], spravne:0, krajina:"statek" },
+  { typ:"spocitej", co:"masle", pocet:15, otazka:"KOLIK MAŠLIČEK UŽ JE HOTOVÝCH?",
+    rekne:{ kdo:"babicka", text:"AHOJ! KOLIK MAŠLIČEK UŽ MÁME?", hlas:"Ahoj! Kolik mašliček už máme?" } },
+  { typ:"poctyPsani", a:15, b:6, op:"+", text:"HOTOVÝCH MAŠLIČEK JE 15.\nBABIČKA UDĚLALA JEŠTĚ 6.\nKOLIK MAŠLIČEK MÁ OCAS?" }
+]},
+{ ikona:"🌾", stitek:"POLE", nazev:"4. NA STRNIŠTI", kroky:[
+  { typ:"povidka", krajina:"strniste", bezTraktoru:true, text:
+    "NA POLI ZA VSÍ UŽ BYLO PLNO DĚTÍ A DRAKŮ.\nDĚDA OLÍZL PRST A ZVEDL HO NAHORU.\nVYSVĚTLIL: Z KTERÉ STRANY TĚ PRST STUDÍ, ODTUD FOUKÁ VÍTR.\nDRAKA POUŠTÍŠ ZÁDY K VĚTRU, AŤ SE DO NĚJ VÍTR OPŘE.\nA JEDNO PRAVIDLO PLATÍ VŽDYCKY:\nNIKDY NEPOUŠTĚJ DRAKA U DRÁTŮ ELEKTRICKÉHO VEDENÍ.",
+    postavy:[{kdo:"kluk", x:330}, {kdo:"deda", x:440}], drak:{ x:540, y:170, sc:.55, rot:-20 } },
+  { typ:"cteni", otazka:"JAK DĚDA ZJISTIL, ODKUD FOUKÁ VÍTR?",
+    volby:["OLÍZL PRST","ZEPTAL SE KRÁVY","ZAVOLAL DO RÁDIA"], spravne:0, krajina:"strniste" },
+  { typ:"cteni", otazka:"KDE SE DRAK NIKDY NESMÍ POUŠTĚT?",
+    volby:["U ELEKTRICKÝCH DRÁTŮ","NA STRNIŠTI","S DĚDOU"], spravne:0, krajina:"strniste" },
+  { typ:"spocitej", co:"drak", pocet:13, pozadi:"nebe", otazka:"KOLIK DRAKŮ LETÍ NAD POLEM?",
+    rekne:{ kdo:"kluk", text:"JÉ, TOLIK DRAKŮ! KOLIK JICH TAM LETÍ?", hlas:"Jé, tolik draků! Kolik jich tam letí?" } }
+]},
+{ ikona:"🪁", stitek:"LETÍ", nazev:"5. DRAK LETÍ", kroky:[
+  { typ:"povidka", krajina:"strniste", bezTraktoru:true, text:
+    "KLUK SE POSTAVIL ZÁDY K VĚTRU A DĚDA ZVEDL DRAKA NAD HLAVU.\nNA POVEL TEĎ DĚDA DRAKA PUSTIL A KLUK SE ROZBĚHL.\nVÍTR SE OPŘEL DO PAPÍRU A DRAK VYLETĚL NAHORU.\nKLUK POUŠTĚL PROVÁZEK Z NAVIJÁKU POMALU, KOUSEK PO KOUSKU.\nDRAK STOUPAL VÝŠ A VÝŠ, AŽ BYL MENŠÍ NEŽ PTÁK.\nOCAS Z MAŠLIČEK SE VE VĚTRU VLNIL JAKO HAD.",
+    postavy:[{kdo:"kluk", x:300}, {kdo:"deda", x:200}], drak:{ x:720, y:60, sc:.8, rot:15, provazek:true } },
+  { typ:"cteni", otazka:"CO DĚLAL KLUK S PROVÁZKEM?",
+    volby:["POUŠTĚL HO Z NAVIJÁKU","SNĚDL HO","ZAVÁZAL SI TKANIČKY"], spravne:0, krajina:"strniste" },
+  { typ:"pocty", a:13, b:8, op:"+", text:"NAD POLEM LETĚLO 13 DRAKŮ.\nPAK VYLETĚLO JEŠTĚ 8.\nKOLIK DRAKŮ JE NA OBLOZE?",
+    rekne:{ kdo:"deda", text:"VÝBORNĚ! JEN HO DRŽ PEVNĚ.", hlas:"Výborně! Jen ho drž pevně." } }
+]},
+{ ikona:"💨", stitek:"PRÁSK", nazev:"6. PRÁSK! DRAK ULETĚL", kroky:[
+  { typ:"povidka", krajina:"strniste", bezTraktoru:true, text:
+    "NAJEDNOU PŘIŠEL SILNÝ NÁRAZ VĚTRU.\nPROVÁZEK SE NAPNUL JAKO STRUNA A PRÁSK, PRASKL.\nDRAK SE UTRHL A ODLÉTAL PRYČ NAD LES.\nKLUK MÁVAL RUKAMA A VOLAL: VRAŤ SE!\nALE DRAK UŽ ZMIZEL ZA STROMY.\nKLUKOVI SE DO OČÍ HRNULY SLZY. DĚDA HO OBJAL A ŘEKL: NEBOJ, NAJDEME HO.",
+    postavy:[{kdo:"kluk", x:300}, {kdo:"deda", x:410}], drak:{ x:900, y:44, sc:.3, rot:35 } },
+  { typ:"cteni", otazka:"PROČ DRAK ULETĚL?",
+    volby:["PRASKL PROVÁZEK","NAROSTLA MU KŘÍDLA","KLUK HO PRODAL"], spravne:0, krajina:"strniste" },
+  { typ:"poctyPsani", a:30, b:12, op:"−", text:"PROVÁZEK MĚL 30 METRŮ.\nNA NAVIJÁKU ZŮSTALO 12 METRŮ.\nKOLIK METRŮ ULETĚLO S DRAKEM?",
+    rekne:{ kdo:"deda", text:"NEBREČ. MY HO NAJDEME.", hlas:"Nebreč. My ho najdeme." } }
+]},
+{ ikona:"🔍", stitek:"STOPY", nazev:"7. MAŠLIČKY UKAZUJÍ CESTU", kroky:[
+  { typ:"povidka", krajina:"les", bezTraktoru:true, text:
+    "DĚDA A KLUK VYRAZILI HLEDAT DRAKA DO LESA ZA POLEM.\nKLUK SE DÍVAL DO KORUN STROMŮ A DĚDA HLEDAL NA ZEMI MEZI LISTÍM.\nPOD STAROU LÍPOU LEŽELA ČERVENÁ MAŠLIČKA Z OCASU.\nO KUS DÁL VISELA NA KEŘI MODRÁ.\nKLUK ZVOLAL: MAŠLIČKY UKAZUJÍ CESTU!\nPODLE NICH DRAK LETĚL AŽ K JEZERŮM.",
+    postavy:[{kdo:"kluk", x:330}, {kdo:"deda", x:450}] },
+  { typ:"cteni", otazka:"CO UKAZOVALO CESTU K DRAKOVI?",
+    volby:["MAŠLIČKY Z OCASU","ŠIPKY NA STROMECH","MAPA OD SOVY"], spravne:0, krajina:"les" },
+  { typ:"spocitej", co:"masle", pocet:7, otazka:"KOLIK MAŠLIČEK JSTE NAŠLI V LESE?",
+    rekne:{ kdo:"deda", text:"PODÍVEJ! KOLIK MAŠLIČEK JSME NAŠLI?", hlas:"Podívej! Kolik mašliček jsme našli?" } },
+  { typ:"pocty", a:21, b:7, op:"−", text:"OCAS MĚL 21 MAŠLIČEK.\nV LESE JSTE JICH NAŠLI 7.\nKOLIK JICH NA OCASU ZŮSTALO?" }
+]},
+{ ikona:"🐢", stitek:"JEZERA", nazev:"8. DRAK U JEZER", kroky:[
+  { typ:"povidka", krajina:"jezera", bezTraktoru:true, text:
+    "LES SKONČIL A PŘED NIMI SE LESKLA STIBŮRKOVSKÁ JEZERA.\nA TAM V RÁKOSÍ U VODY LEŽEL JEJICH DRAK!\nKOUSEK OD NĚJ SE NA SLUNCI VYHŘÍVALA ŽELVA BAHENNÍ.\nDĚDA DRAKA VYTÁHL POMALU A POTICHU, ABY ŽELVU NEVYRUŠIL.\nDRAK MĚL JEN MALOU DÍRKU V PAPÍŘE. TU DOMA ZALEPÍ.\nKLUK HO NESL DOMŮ OPATRNĚ JAKO POKLAD.",
+    postavy:[{kdo:"kluk", x:10, zem:206, sc:.5}, {kdo:"deda", x:955, zem:206, sc:.5}], drak:{ x:880, y:214, sc:.45, rot:70 } },
+  { typ:"cteni", otazka:"KDO SE VYHŘÍVAL KOUSEK OD DRAKA?",
+    volby:["ŽELVA BAHENNÍ","KROKODÝL","VELRYBA"], spravne:0, krajina:"jezera",
+    rekne:{ kdo:"kluk", text:"HURÁ! TAM LEŽÍ NÁŠ DRAK!", hlas:"Hurá! Tam leží náš drak!" } },
+  { typ:"cteni", otazka:"PROČ BYL DĚDA U VODY TAK POTICHU?",
+    volby:["ABY NEVYRUŠIL ŽELVU","BÁL SE VODY","SPAL"], spravne:0, krajina:"jezera" },
+  { typ:"pismena", slovo:"POKLAD", napoveda:"JAK KLUK NESL DRAKA DOMŮ?" }
+]}
+];
+const KARTA_DRAK = [
+  "DRAKA POUŠTÍME ZÁDY K VĚTRU.",
+  "OCAS Z MAŠLIČEK DRŽÍ DRAKA VE VZDUCHU ROVNĚ.",
+  "ODKUD FOUKÁ VÍTR, POZNÁŠ PODLE OLÍZNUTÉHO PRSTU.",
+  "DRAKA NIKDY NEPOUŠTĚJ U ELEKTRICKÝCH DRÁTŮ.",
+  "ŽELVU BAHENNÍ U JEZER NECHÁME V KLIDU."
+];
+
+/* ==================================================================
    ROZCESTNÍK — registr úrovní
    ================================================================== */
 const UROVNE = [
@@ -1226,7 +1330,11 @@ const UROVNE = [
   { klic:"u6", ikona:"🍇", nazev:"MALÝ TZ NA VINOBRANÍ", podnazev:"Čtení", model:"tz",
     lak:"#e07b22", dlouheTexty:true, bezHlasu:true, finaleKrajina:"statek",
     etapy: ETAPY_U6, nazevKarty:"MALÝ TZ NA VINOBRANÍ", karta: KARTA_TZ_VINO,
-    dojezdNadpis:"HOTOVO! MALÝ TZ JEDE SPÁT" }
+    dojezdNadpis:"HOTOVO! MALÝ TZ JEDE SPÁT" },
+  { klic:"u7", ikona:"🪁", nazev:"DRAKIÁDA", podnazev:"Kluk a uletěný drak", model:"zetor",
+    lak:"#2f5c9e", dlouheTexty:true, bezHlasu:true, finaleKrajina:"statek", finalePostava:"kluk",
+    etapy: ETAPY_U7, nazevKarty:"DRAKIÁDA", karta: KARTA_DRAK,
+    dojezdNadpis:"HOTOVO! DRAK JE ZASE DOMA" }
 ];
 
 /* ==================================================================
@@ -1405,14 +1513,39 @@ const POSTAVY = {
     <rect x="38" y="122" width="10" height="34" fill="#f1c9a5"/><rect x="52" y="122" width="10" height="34" fill="#f1c9a5"/>
     <rect x="34" y="112" width="32" height="18" rx="4" fill="#3a5a8c"/>
     <path d="M32 116 L35 82 Q50 75 65 82 L68 116z" fill="#e0473a"/>
+    <path d="M64 88 L78 70" stroke="#f1c9a5" stroke-width="6" stroke-linecap="round"/>
     <circle cx="50" cy="62" r="17" fill="#f1c9a5"/>
     <path d="M33 58 Q34 40 50 40 Q66 40 67 58z" fill="#2f5c9e"/><rect x="58" y="52" width="18" height="6" rx="3" fill="#2f5c9e"/>
     <circle cx="44" cy="63" r="2.2" fill="#2d3339"/><circle cx="56" cy="63" r="2.2" fill="#2d3339"/>
     <path d="M44 70 q6 5 12 0" stroke="#7a4a3a" stroke-width="2.5" fill="none"/>` }
 };
+/* `zem` přepíše výšku terénu — ZEM je dělaná pro traktor a třeba u jezer
+   leží ve vodě, postava potřebuje stát na břehu */
 function postavaVe(krajina, p){
-  const sc = p.sc || .6, y = (ZEM[krajina] || 276) - 156*sc;
+  const sc = p.sc || .6, y = (p.zem || ZEM[krajina] || 276) - 156*sc;
   return `<g transform="translate(${p.x},${y}) scale(${sc})">${POSTAVY[p.kdo].svg}</g>`;
+}
+/* papírový drak s očima a ocasem z mašliček; střed kříže je v bodě 0,0 */
+const DRAK = `<path d="M0 50 q-16 20 0 40 q16 20 0 40" stroke="#6b4a26" stroke-width="2.5" fill="none"/>
+  ${[[-3,68,"#2f5c9e"],[5,92,"#f0a92b"],[-3,112,"#2f7a3d"],[3,128,"#e0473a"]].map(m=>
+    `<path d="M${m[0]} ${m[1]} l-10 -6 v12z M${m[0]} ${m[1]} l10 -6 v12z" fill="${m[2]}"/>`).join("")}
+  <path d="M0 -40 L30 0 L0 50 L-30 0z" fill="#e0473a" stroke="#7a2019" stroke-width="3"/>
+  <path d="M0 -40 V50 M-30 0 H30" stroke="#6b4a26" stroke-width="3"/>
+  <circle cx="-10" cy="-8" r="6" fill="#fff"/><circle cx="10" cy="-8" r="6" fill="#fff"/>
+  <circle cx="-9" cy="-7" r="3" fill="#222"/><circle cx="11" cy="-7" r="3" fill="#222"/>
+  <path d="M-11 14 q11 10 22 0" stroke="#222" stroke-width="3" fill="none"/>`;
+/* `drak:{x, y, sc?, rot?, provazek?}` — s provázkem vede čára ke klukově ruce */
+function drakVe(k){
+  const d = k.drak;
+  let s = "";
+  const kluk = (k.postavy || []).find(p=>p.kdo === "kluk");
+  if(d.provazek && kluk){
+    const sc = kluk.sc || .6;
+    const hx = kluk.x + 78*sc, hy = (kluk.zem || ZEM[k.krajina] || 276) - 156*sc + 70*sc;
+    s += `<path d="M${hx} ${hy} Q${(hx + d.x)/2} ${Math.max(hy, d.y) - 10} ${d.x} ${d.y}"
+            stroke="#fff" stroke-width="2.5" fill="none"/>`;
+  }
+  return s + `<g transform="translate(${d.x},${d.y}) rotate(${d.rot || 0}) scale(${d.sc || .8})">${DRAK}</g>`;
 }
 
 /* ---------- 1) příběhový panel ----------
@@ -1422,7 +1555,8 @@ KROKY.povidka = function(k){
     traktorVe(k.krajina, f.x, f.sc, null, f.model, lakModelu(f.model, f.lak))).join("");
   const postavy = (k.postavy || []).map(p=>postavaVe(k.krajina, p)).join("");
   const obr = plochaEl(svgKrajina(k.krajina) + kamaradi +
-    (k.bezTraktoru ? "" : traktorVe(k.krajina, 110, .46, null, modelAktivni())) + postavy, "0 0 1000 300");
+    (k.bezTraktoru ? "" : traktorVe(k.krajina, 110, .46, null, modelAktivni())) + postavy +
+    (k.drak ? drakVe(k) : ""), "0 0 1000 300");
   const p = document.createElement("div"); p.className = "povidka"; p.textContent = k.text;
   if(aktivniUroven().dlouheTexty){ obr.classList.add("nizka"); p.classList.add("dlouha"); }
   const b = document.createElement("button");
@@ -1640,7 +1774,11 @@ const VECI = {
   sklenice: `<path d="M-14 -22 h28 l-4 42 h-20z" fill="#eef6fa" stroke="#8aa4b0" stroke-width="2"/>
     <path d="M-12 -6 h24 l-3 24 h-18z" fill="#e6c25a"/>`,
   jablko: `<path d="M0 -14 v-7" stroke="#6b5030" stroke-width="3"/><ellipse cx="7" cy="-19" rx="7" ry="3.5" fill="#3f7a3a"/>
-    <circle cx="0" cy="0" r="15" fill="#d9412b"/><circle cx="-5" cy="-5" r="4" fill="#f08a6e"/>`
+    <circle cx="0" cy="0" r="15" fill="#d9412b"/><circle cx="-5" cy="-5" r="4" fill="#f08a6e"/>`,
+  /* funkce dostane pořadí — mašličky se střídají v barvách */
+  masle: (i)=>{ const b = ["#e0473a","#2f5c9e","#f0a92b","#2f7a3d"][i % 4];
+    return `<path d="M0 0 L-18 -12 V12z M0 0 L18 -12 V12z" fill="${b}"/><circle r="5" fill="#5a3a22"/>`; },
+  drak: `<g transform="scale(.36)">${DRAK}</g>`
 };
 KROKY.spocitej = function(k){
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.otazka;
@@ -1649,13 +1787,14 @@ KROKY.spocitej = function(k){
   const rady = Math.ceil(k.pocet / 10), sloupcu = Math.min(k.pocet, 10);
   const strom = k.pozadi === "strom", kmen = strom ? 56 : 0;
   const vyska = rady*96 + 24 + kmen, rozpeti = (sloupcu-1)*88 + (sloupcu > 5 ? 50 : 0);
-  let s = `<rect x="0" y="0" width="1000" height="${vyska}" fill="${strom ? "#9ccdec" : "#f6efd9"}"/>`;
+  const vec = VECI[k.co];
+  let s = `<rect x="0" y="0" width="1000" height="${vyska}" fill="${strom || k.pozadi === "nebe" ? "#9ccdec" : "#f6efd9"}"/>`;
   if(strom) s += `<rect x="470" y="${vyska-kmen-10}" width="60" height="${kmen+10}" fill="#6b4a2e"/>
     <ellipse cx="500" cy="${(vyska-kmen)/2}" rx="${rozpeti/2+90}" ry="${(vyska-kmen)/2+4}" fill="#4f9a3f"/>`;
   for(let i=0;i<k.pocet;i++){
     const c = i % 10, r = Math.floor(i / 10);
     const x = 500 - rozpeti/2 + c*88 + (c >= 5 ? 50 : 0), y = 64 + r*96;
-    s += `<g transform="translate(${x},${y}) scale(1.6)">${VECI[k.co]}</g>`;
+    s += `<g transform="translate(${x},${y}) scale(1.6)">${typeof vec === "function" ? vec(i) : vec}</g>`;
   }
   const plocha = plochaEl(s, `0 0 1000 ${vyska}`);
   plocha.dataset.pocet = k.pocet;
@@ -1855,13 +1994,17 @@ function finale(){
   const u = aktivniUroven(), model = modelAktivni();
   nadpisEl.textContent = u.dojezdNadpis;
   const kraj = u.finaleKrajina || "statek";
-  const plocha = plochaEl(svgKrajina(kraj) +
-    traktorVe(kraj, 30, .62, "fin", model), "0 0 1000 300");
+  /* `finalePostava` — do stodoly nejede traktor, ale dojde postava (dobrodružství bez traktoru) */
+  const fin = u.finalePostava
+    ? `<g id="fin" transform="translate(40,${(ZEM[kraj] || 276) - 156*.9}) scale(.9)">${POSTAVY[u.finalePostava].svg}</g>`
+    : traktorVe(kraj, 30, .62, "fin", model);
+  const plocha = plochaEl(svgKrajina(kraj) + fin, "0 0 1000 300");
   stage.append(plocha);
   const t = plocha.querySelector("#fin");
   t.style.transition = "transform 4s ease-in-out";
   /* zajede do otevřených dveří stodoly a zmenší se, jak "vjíždí dovnitř" */
-  requestAnimationFrame(()=>t.setAttribute("transform","translate(704,150) scale(.3)"));
+  requestAnimationFrame(()=>t.setAttribute("transform",
+    u.finalePostava ? "translate(765,185) scale(.3)" : "translate(704,150) scale(.3)"));
   zvuk.motor(36);
 
   /* kartička až po dojezdu — jinak by stlačila animaci do pásku */
