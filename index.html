@@ -30,6 +30,11 @@ html,body{margin:0;height:100%;overflow:hidden;
 .povidka{font-size:clamp(16px,2.5vw,25px);font-weight:700;letter-spacing:1.2px;
   text-align:center;line-height:1.5;max-width:28ch;background:rgba(255,255,255,.86);
   padding:14px 22px;border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:pre-line}
+/* Čtenářská úroveň: strana má kolem 350 znaků. Při 28ch by to bylo patnáct
+   řádků a DÁL by vypadlo pod obrazovku — text je proto širší, zarovnaný
+   doleva (dlouhý odstavec se na střed čte špatně) a obrázek menší. */
+.povidka.dlouha{font-size:clamp(15px,2.3vw,23px);line-height:1.45;max-width:44ch;text-align:left}
+.plocha.nizka{--svgmax:30vh}
 
 /* ---------- tlačítka ---------- */
 .volby{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
@@ -154,6 +159,8 @@ html,body{margin:0;height:100%;overflow:hidden;
      řádcích, kolik jich má zalomených ručně — jinak se zdvojnásobí a
      tlačítko DÁL vypadne pod spodní okraj. */
   .povidka{font-size:15px;line-height:1.28;padding:7px 14px;max-width:54ch}
+  .povidka.dlouha{font-size:14px;line-height:1.3;max-width:76ch}
+  .plocha.nizka{--svgmax:19vh}
   .zadani{font-size:15px;line-height:1.25;max-width:34ch}
   .volba{font-size:16px;min-height:44px;min-width:70px;padding:8px 18px}
   .dal{font-size:16px;min-height:44px;padding:9px 26px}
@@ -195,11 +202,12 @@ html,body{margin:0;height:100%;overflow:hidden;
 
 <script>
 /* ==================================================================
-   TRAKTORY NA PODLUŽÍ — rozcestník + 3 učící úrovně pro první čtení
+   TRAKTORY NA PODLUŽÍ — rozcestník + 4 učící úrovně pro první čtení
    a počítání (2. třída ZŠ)
    Jeden soubor, žádné závislosti, funguje offline z tabletu.
    Úrovně: ZETOR 25 (den na Podluží) / TZ-4K-14 (technika, malý
-   kloubový traktor) / ZETOR 50 SUPER (dědův traktor, rodinný příběh)
+   kloubový traktor) / ZETOR 50 SUPER (dědův traktor, rodinný příběh) /
+   NOVÁ STODOLA (čtenářská — deset stran příběhu, traktory stavějí spolu)
    Mechaniky: skládačka / lakování / jízda / čtení / písmena /
    počty (výběr) / počty (napiš sám) — beze změny z prvního dema
    ================================================================== */
@@ -249,6 +257,7 @@ if(window.speechSynthesis){
 }
 function rekni(text){
   if(!hlasZap || !text || !window.speechSynthesis) return;
+  if(state.uroven && aktivniUroven().bezHlasu) return;   // čtenářská úroveň: čte dítě samo
   pripravHlas();
   if(!ceskyHlas) return;              // bez českého hlasu radši mlčet
   try{
@@ -264,9 +273,15 @@ function rekni(text){
    uložené vedle sebe v `postup`, ať přepínání levelů nic nemaže. */
 const KLIC = "traktory.stav.v1";
 const state = { uroven: null, postup: {} };
-function vychoziPostup(){ return { etapa:0, krok:0, dily:[], barva:"#b5342a", nateno:{} }; }
+/* Úroveň bez skládačky a lakování (`lak` v UROVNE) začíná s traktorem už
+   natřeným — jinak by celou hru jezdil šedý neobarvený plech. */
+function vychoziPostup(u){
+  const p = { etapa:0, krok:0, dily:[], barva:"#b5342a", nateno:{} };
+  if(u && u.lak) p.nateno = lakModelu(u.model, u.lak);
+  return p;
+}
 function S(){
-  if(!state.postup[state.uroven]) state.postup[state.uroven] = vychoziPostup();
+  if(!state.postup[state.uroven]) state.postup[state.uroven] = vychoziPostup(aktivniUroven());
   return state.postup[state.uroven];
 }
 function uloz(){ try{ localStorage.setItem(KLIC, JSON.stringify(state)); }catch(e){} }
@@ -509,16 +524,70 @@ function svgKrajina(typ){
     ${[70,210,350,490,630,770,910].map(x=>strom(x,244,58,"#4a8f3f")).join("")}
     ${[140,280,420,560,700,840].map(x=>strom(x,222,46,"#5aa54a")).join("")}` + cesta;
   }
+  if(/^stavba\d$/.test(typ))
+    return obloha + zem() + strom(70,232,84,"#3f7a3a") + svgStavba(+typ.slice(6)) + cesta;
   return obloha + zem();
+}
+/* Staveniště nové stodoly po fázích: 0 trosky · 1 základy · 2 kostra ·
+   3 krov se stromečkem a půlka tašek · 4 hotová stodola.
+   Stodola stojí přesně tam, kde ta na statku (vrata 700–860), aby finále
+   zajíždělo do vrat stejnou animací. */
+function svgStavba(n){
+  const DREVO = "#b98a52", TMAVE = "#8a6236";
+  const xStrechy = (y, vpravo)=>{ const d = (92 - y) / 70 * 180; return vpravo ? 960 - d : 600 + d; };
+  /* stromeček musí zůstat pod horním okrajem kresby (y > 0), jinak se ořízne */
+  const stromecek = `<g><path d="M780 24 v-8" stroke="${TMAVE}" stroke-width="4"/>
+    <path d="M769 18 L780 2 L791 18z" fill="#2f7a3d"/>
+    <path d="M782 12 q12 6 9 16" stroke="#e0473a" stroke-width="3" fill="none"/>
+    <path d="M778 12 q-12 6 -9 16" stroke="#2f5c9e" stroke-width="3" fill="none"/></g>`;
+  if(n === 0) return `
+    <path d="M628 232 L662 126 L700 134 L672 232z" fill="#5d4632"/>
+    <path d="M880 232 L902 150 L944 158 L928 232z" fill="#5d4632"/>
+    <path d="M700 232 L822 168 L934 232z" fill="#8f2b1f"/>
+    <path d="M742 210 L822 168" stroke="#6e2016" stroke-width="5"/>
+    ${[[640,220,-14],[760,226,8],[850,222,-6],[610,228,4]].map(p=>
+      `<rect x="${p[0]}" y="${p[1]}" width="96" height="9" rx="2" fill="${TMAVE}" transform="rotate(${p[2]} ${p[0]+48} ${p[1]})"/>`).join("")}`;
+  let s = `<rect x="610" y="220" width="340" height="16" rx="3" fill="#9aa0a6"/>`;
+  if(n === 1) return s + `
+    <path d="M500 234 q46-58 92 0z" fill="#e0c078"/>
+    ${[[640,212],[676,214],[900,212],[930,215]].map(p=>`<ellipse cx="${p[0]}" cy="${p[1]}" rx="15" ry="9" fill="#7d858c"/>`).join("")}`;
+  if(n === 4){
+    s += `<rect x="620" y="92" width="320" height="140" fill="${DREVO}"/>
+      <g stroke="${TMAVE}" stroke-width="2">${Array.from({length:15},(_,i)=>`<path d="M${640+i*20} 92 v140"/>`).join("")}</g>
+      <rect x="700" y="118" width="160" height="114" fill="#5a3a22"/>
+      <g stroke="#3f2a18" stroke-width="6"><path d="M780 118 v114"/><path d="M700 118 L780 232"/><path d="M860 118 L780 232"/></g>
+      <path d="M600 92 L780 22 L960 92z" fill="#b5342a"/>`;
+    [80,68,56,44,32].forEach(y=>{ s += `<path d="M${xStrechy(y)} ${y} H${xStrechy(y,true)}" stroke="#8f2b1f" stroke-width="3"/>`; });
+    return s + stromecek;
+  }
+  /* 2 a 3: dřevěná kostra */
+  s += `${[626,700,774,848,922].map(x=>`<rect x="${x}" y="96" width="12" height="126" fill="${DREVO}"/>`).join("")}
+    <rect x="612" y="88" width="336" height="10" fill="${TMAVE}"/>
+    <path d="M604 92 L780 24 L956 92" stroke="${DREVO}" stroke-width="9" fill="none"/>
+    <path d="M780 28 v62" stroke="${DREVO}" stroke-width="7"/>
+    <path d="M700 90 L780 40 M860 90 L780 40" stroke="${DREVO}" stroke-width="6"/>`;
+  if(n === 3){
+    s += `<path d="M${xStrechy(92)} 92 L${xStrechy(92,true)} 92 L${xStrechy(68,true)} 68 L${xStrechy(68)} 68z" fill="#b5342a"/>
+      <path d="M${xStrechy(80)} 80 H${xStrechy(80,true)}" stroke="#8f2b1f" stroke-width="3"/>
+      <rect x="770" y="20" width="20" height="10" fill="${TMAVE}"/>` + stromecek;
+  }
+  return s;
 }
 /* Kde v které krajině leží zem (aby traktor nikdy neplaval ve vzduchu).
    Traktor má spodek kol v lokálních souřadnicích dané v MODELY[x].spodekKol. */
-const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276, sad:276 };
-function traktorVe(krajina, x, sc, id, model){
+const ZEM = { tvrdonice:276, les:276, jezera:240, pole:290, vinohrad:256, statek:276, sad:276,
+              stavba0:276, stavba1:276, stavba2:276, stavba3:276, stavba4:276 };
+/* `nateno` jen pro kamarády v příběhu — hráčův traktor bere nátěr z postupu */
+function traktorVe(krajina, x, sc, id, model, nateno){
   const m = MODELY[model || "zetor"];
   const y = (ZEM[krajina] || 276) - m.spodekKol * sc;
   return `<g ${id?`id="${id}"`:""} transform="translate(${x},${y}) scale(${sc})">
-            ${svgTraktor({ nateno: S().nateno, model })}</g>`;
+            ${svgTraktor({ nateno: nateno || S().nateno, model })}</g>`;
+}
+function lakModelu(model, barva){
+  const n = {};
+  MODELY[model || "zetor"].natiratelne.forEach(d=>{ n[d] = barva; });
+  return n;
 }
 /* cílová pozice pro animaci jízdy — stejný přepočet, jiné x */
 function jizdaCil(krajina, x, sc, model){
@@ -817,6 +886,121 @@ const KARTA_50_HLAS =
   "Takové traktory pomáhaly na českých a moravských polích celá desetiletí.";
 
 /* ==================================================================
+   ÚROVEŇ 4 — NOVÁ STODOLA: Zetor volá kamarády
+   Čtenářská úroveň. Deset stran příběhu, dohromady asi dvě normostrany
+   (kolem 3 600 znaků). Po každé straně otázka na porozumění, činností
+   je míň. Kamarádi jsou traktory z předchozích úrovní, aby hra držela
+   pohromadě; stodola se na obrázku staví spolu s příběhem.
+   ================================================================== */
+const KAM_TZ = (x)=>({ model:"tz",    lak:"#e07b22", x, sc:.38 });
+const KAM_50 = (x)=>({ model:"zetor", lak:"#2f5c9e", x, sc:.48 });
+const ETAPY_U4 = [
+{ ikona:"⛈️", stitek:"BOUŘKA", nazev:"1. BOUŘKA A STARÁ STODOLA", kroky:[
+  { typ:"povidka", krajina:"stavba0", text:
+    "V TVRDONICÍCH BYLA V NOCI VELIKÁ BOUŘKA.\nHŘMĚLO, LILO JAKO Z KONVE A SILNÝ VÍTR LÁMAL VĚTVE ZE STROMŮ.\nZETOR 25 PŘEČKAL BOUŘKU POD PŘÍSTŘEŠKEM NA DVOŘE.\nRÁNO JEL KE SVÉ STARÉ STODOLE A LEKL SE.\nSTŘECHA LEŽELA NA ZEMI A STĚNY BYLY NAKŘIVO.\nZETOR SMUTNĚ ZABUBLAL: KDE TEĎ BUDU SPÁT?\nPAK SI ŘEKL: POSTAVÍM SI NOVOU STODOLU!\nJENŽE TAKOVOU VELKOU STAVBU SÁM NEZVLÁDNE." },
+  { typ:"cteni", otazka:"CO SE STALO SE STAROU STODOLOU?",
+    volby:["ROZBILA JI BOUŘKA","SHOŘELA","ODLETĚLA DO TÝNCE"], spravne:0, krajina:"stavba0" },
+  { typ:"cteni", otazka:"KDE ZETOR PŘEČKAL BOUŘKU?",
+    volby:["POD PŘÍSTŘEŠKEM","V LESE","NA MOSTĚ"], spravne:0, krajina:"stavba0" },
+  { typ:"pismena", slovo:"STODOLA", napoveda:"CO SI ZETOR CHCE POSTAVIT?" }
+]},
+{ ikona:"📣", stitek:"PARTA", nazev:"2. ZETOR VOLÁ KAMARÁDY", kroky:[
+  { typ:"povidka", krajina:"stavba0", text:
+    "ZETOR ZATROUBIL TŘIKRÁT ZA SEBOU: TÚ, TÚ, TÚÚÚ!\nTO JE ZNAMENÍ, ŽE KAMARÁD POTŘEBUJE POMOC.\nJAKO PRVNÍ PŘIJEL Z DÍLNY MALÝ TZ ČTYŘI KÁČKO ČTRNÁCT.\nJE NEJMENŠÍ Z PARTY, ALE PROTOČÍ SE I ÚZKOU ULIČKOU.\nZA CHVÍLI DORAZIL DĚDŮV ZETOR 50 SUPER. JE VELKÝ A SILNÝ.\nKAMARÁDI SE PODÍVALI NA TROSKY A ŘEKLI: POSTAVÍME TO SPOLU.\nKDYŽ JE NÁS VÍC, JDE KAŽDÁ PRÁCE LÍP.",
+    kamaradi:[KAM_TZ(300), KAM_50(440)] },
+  { typ:"cteni", otazka:"KOLIKRÁT ZETOR ZATROUBIL?",
+    volby:["TŘIKRÁT","JEDNOU","DESETKRÁT"], spravne:0, krajina:"stavba0" },
+  { typ:"cteni", otazka:"KDO PŘIJEL NA POMOC JAKO PRVNÍ?",
+    volby:["MALÝ TZ","DĚDŮV ZETOR","HASIČI"], spravne:0, krajina:"stavba0" },
+  { typ:"pismena", slovo:"PARTA", napoveda:"JAK SE ŘÍKÁ SKUPINĚ KAMARÁDŮ?" }
+]},
+{ ikona:"🧹", stitek:"ÚKLID", nazev:"3. UKLIĎTE TROSKY", kroky:[
+  { typ:"povidka", krajina:"stavba0", text:
+    "NEŽ SE ZAČNE STAVĚT, MUSÍ SE UKLIDIT TROSKY.\nMALÝ TZ SE PROPLETE MEZI POPADANÝMI PRKNY I TAM, KAM BY SE VELKÝ TRAKTOR NEVEŠEL.\nDOBRÁ PRKNA SE SKLÁDAJÍ STRANOU, JEŠTĚ SE BUDOU HODIT.\nZLOMENÁ PRKNA NAŘEŽE DĚDA NA DŘÍVÍ DO KAMEN.\nV ZIMĚ S NIMI BUDE TOPIT.\nZETOR 25 ODVÁŽÍ HROMÁDKY PRKEN NA VLEČCE.\nPOMOZ MU JE NALOŽIT.",
+    kamaradi:[KAM_TZ(300)] },
+  { typ:"sber", pocet:6, krajina:"stavba0", naklad:"prkna", popis:"KLIKNI NA KAŽDOU HROMÁDKU PRKEN A NALOŽ JI" },
+  { typ:"cteni", otazka:"CO SE UDĚLÁ SE ZLOMENÝMI PRKNY?",
+    volby:["NAŘEŽOU SE NA DŘÍVÍ","HODÍ SE DO ŘEKY","SNÍ JE KOZA"], spravne:0, krajina:"stavba0" },
+  { typ:"poctyPsani", a:24, b:9, op:"−", text:"V TROSKÁCH BYLO 24 PRKEN.\nZLOMENÝCH BYLO 9.\nKOLIK DOBRÝCH PRKEN ZBYLO?" }
+]},
+{ ikona:"🪨", stitek:"ZÁKLADY", nazev:"4. PEVNÉ ZÁKLADY", kroky:[
+  { typ:"povidka", krajina:"stavba1", text:
+    "KAŽDÁ STAVBA POTŘEBUJE PEVNÉ ZÁKLADY.\nBEZ NICH BY SE STODOLA ČASEM NAKLONILA JAKO STARÝ PLOT.\nNEJDŘÍV SE VYKOPALA HLUBOKÁ RÝHA.\nZETOR 25 ZAPŘÁHL VLEČKU A JEL DO TÝNCE PRO PÍSEK A CEMENT.\nMALÝ TZ VOZIL NA VOZÍKU VODU A KAMENY.\nVŠECHNO SE SMÍCHALO NA BETON A NALILO SE TO DO RÝHY.\nBETON PAK NĚKOLIK DNÍ TVRDNUL, NEŽ SE NA NĚJ SMĚLO STAVĚT.",
+    kamaradi:[KAM_TZ(300)] },
+  { typ:"zaprah", nastroj:"vlecka", krajina:"stavba1", popis:"ZAPŘÁHNI VLEČKU NA PÍSEK" },
+  { typ:"jizda", krajina:"tvrdonice", text:"ZETOR JEDE DO TÝNCE PRO PÍSEK A CEMENT" },
+  { typ:"cteni", otazka:"PROČ STODOLA POTŘEBUJE ZÁKLADY?",
+    volby:["ABY SE NENAKLONILA","ABY BYLA HEZČÍ","ABY V NÍ BYLO TEPLO"], spravne:0, krajina:"stavba1" },
+  { typ:"poctyPsani", a:14, b:6, op:"+", text:"ZETOR PŘIVEZL 14 PYTLŮ CEMENTU\nA POTOM JEŠTĚ 6.\nKOLIK PYTLŮ PŘIVEZL CELKEM?" }
+]},
+{ ikona:"🌲", stitek:"LES", nazev:"5. KMENY Z LESA", kroky:[
+  { typ:"povidka", krajina:"les", text:
+    "NA KOSTRU STODOLY JSOU POTŘEBA DLOUHÉ A ROVNÉ KMENY.\nHAJNÝ V LESE ZA POLEM UKÁZAL, KTERÉ STROMY SE SMĚJÍ POKÁCET.\nZA KAŽDÝ POKÁCENÝ STROM SE MUSÍ ZASADIT NOVÝ STROMEK, ABY LES NEZMIZEL.\nKMENY JSOU TAK TĚŽKÉ, ŽE MALÝ ZETOR 25 BY JE NEUTÁHL.\nTO JE PRÁCE PRO DĚDŮV ZETOR 50 SUPER.\nMÁ PADESÁT KONÍ, TO JE DVAKRÁT VÍC NEŽ ZETOR 25.",
+    kamaradi:[KAM_50(360)] },
+  { typ:"jizda", krajina:"les", text:"TRAKTORY JEDOU LESNÍ CESTOU PRO KMENY" },
+  { typ:"cteni", otazka:"KDO UKÁZAL, KTERÉ STROMY SE SMĚJÍ POKÁCET?",
+    volby:["HAJNÝ","STAROSTA","ŽELVA"], spravne:0, krajina:"les" },
+  { typ:"cteni", otazka:"CO SE MUSÍ ZASADIT ZA KAŽDÝ POKÁCENÝ STROM?",
+    volby:["NOVÝ STROMEK","KYTIČKA","BRAMBORA"], spravne:0, krajina:"les" },
+  { typ:"pismena", slovo:"KMEN", napoveda:"CO TÁHNE DĚDŮV ZETOR Z LESA?" }
+]},
+{ ikona:"🪚", stitek:"PILA", nazev:"6. KOSTRA STODOLY", kroky:[
+  { typ:"povidka", krajina:"stavba2", text:
+    "KMENY SE ODVEZLY NA PILU.\nPILA HUČELA JAKO STO VČEL A VŠUDE LÉTALY PILINY.\nZ KULATÝCH KMENŮ BYLY NAJEDNOU ROVNÉ HRANATÉ TRÁMY.\nTESAŘI Z NICH NA ZÁKLADECH POSTAVILI KOSTRU STODOLY.\nSLOUPY STOJÍ ROVNĚ, TRÁMY LEŽÍ VODOROVNĚ A KROKVE JSOU ŠIKMO.\nKOSTRA VYPADALA JAKO ŽEBRA OBROVSKÉ VELRYBY.\nMALÝ TZ PODÁVAL TESAŘŮM HŘEBÍKY A KLADIVA.",
+    kamaradi:[KAM_TZ(300), KAM_50(440)] },
+  { typ:"cteni", otazka:"CO SE NA PILE UDĚLALO Z KULATÝCH KMENŮ?",
+    volby:["ROVNÉ TRÁMY","SIRKY","PAPÍROVÉ LODIČKY"], spravne:0, krajina:"stavba2" },
+  { typ:"poctyPsani", a:8, b:8, op:"+", text:"TESAŘI POSTAVILI 8 SLOUPŮ VPŘEDU\nA 8 SLOUPŮ VZADU.\nKOLIK SLOUPŮ MÁ KOSTRA?" },
+  { typ:"pismena", slovo:"TRÁM", napoveda:"CO NAŘEZALA PILA Z KMENE?" }
+]},
+{ ikona:"💪", stitek:"TRÁM", nazev:"7. TĚŽKÝ TRÁM NAHORU", kroky:[
+  { typ:"povidka", krajina:"stavba2", text:
+    "NAHORU NA ŠPIČKU STŘECHY PATŘÍ NEJDELŠÍ A NEJTĚŽŠÍ TRÁM. ŘÍKÁ SE MU HŘEBENOVÝ.\nPŘES KLADKU NAHOŘE VEDLO LANO. DĚDŮV ZETOR ZA NĚJ ZATÁHL.\nMOTOR ŘVAL, KOLA SE PROTÁČELA, ALE TRÁM SE ANI NEHNUL.\nTAK SE K LANU ZAPŘÁHLI VŠICHNI TŘI.\nNA POVEL RAZ, DVA, TŘI ZATÁHLI NARÁZ A TRÁM POMALU VYJEL NAHORU.\nTESAŘI NA NĚJ PŘIVÁZALI OZDOBENÝ STROMEČEK.\nZNAMENÁ TO, ŽE KROV JE HOTOVÝ.",
+    kamaradi:[KAM_TZ(300), KAM_50(440)] },
+  { typ:"cteni", otazka:"PROČ SE TRÁM NEJDŘÍV ANI NEHNUL?",
+    volby:["JEDEN TRAKTOR NESTAČIL","ZETOR USNUL","LANO BYLO ZE ŠPAGET"], spravne:0, krajina:"stavba3" },
+  { typ:"cteni", otazka:"CO PŘIVÁZALI TESAŘI NAHORU NA TRÁM?",
+    volby:["OZDOBENÝ STROMEČEK","BALÓNEK","PONOŽKU"], spravne:0, krajina:"stavba3" },
+  { typ:"pismena", slovo:"SPOLU", napoveda:"JAK TRAKTORY TĚŽKÝ TRÁM VYTÁHLY?" }
+]},
+{ ikona:"🧱", stitek:"STŘECHA", nazev:"8. STŘECHA Z TAŠEK", kroky:[
+  { typ:"povidka", krajina:"stavba3", text:
+    "NA KROKVE SE PŘIBILY TENKÉ LATĚ A NA NĚ SE KLADOU TAŠKY.\nTAŠKY JSOU Z PÁLENÉ HLÍNY, PROTO JSOU ČERVENÉ.\nKLADOU SE ODSPODU NAHORU.\nKAŽDÁ TAŠKA PŘEKRYJE KOUSEK TÉ, CO JE POD NÍ.\nDÉŠŤ PAK STEČE PO STŘEŠE DOLŮ A DOVNITŘ NEPROTEČE ANI KAPKA.\nZETOR 25 VOZIL TAŠKY NA VLEČCE A MALÝ TZ JE ROZVÁŽEL AŽ KE ZDI.\nNALOŽ S NIMI DALŠÍ HROMÁDKY.",
+    kamaradi:[KAM_TZ(300)] },
+  { typ:"sber", pocet:6, krajina:"stavba3", naklad:"tasky", popis:"KLIKNI NA KAŽDOU HROMÁDKU TAŠEK A NALOŽ JI" },
+  { typ:"cteni", otazka:"PROČ DO STODOLY NEPROTEČE DÉŠŤ?",
+    volby:["TAŠKY SE PŘEKRÝVAJÍ","MÁ DEŠTNÍK","PRŠÍ JEN VEDLE"], spravne:0, krajina:"stavba3" },
+  { typ:"poctyPsani", a:30, b:12, op:"−", text:"NA VLEČCE BYLO 30 TAŠEK.\nNA STŘECHU UŽ JICH TESAŘI DALI 12.\nKOLIK JICH NA VLEČCE ZBÝVÁ?" }
+]},
+{ ikona:"🚪", stitek:"VRATA", nazev:"9. VELKÁ VRATA", kroky:[
+  { typ:"povidka", krajina:"stavba4", text:
+    "STODOLA UŽ MÁ KOSTRU I STŘECHU. TESAŘI JEŠTĚ OBILI STĚNY PRKNY.\nNAKONEC CHYBĚLA UŽ JEN VRATA.\nMUSÍ BÝT TAK VYSOKÁ A ŠIROKÁ, ABY JIMI PROJEL I VELKÝ DĚDŮV ZETOR.\nNA VRATA SE POUŽILA DOBRÁ PRKNA ZE STARÉ STODOLY.\nNIC SE NEVYHODILO, STARÉ DŘEVO DOSTALO NOVÝ ŽIVOT.\nVRATA SE NAKONEC NATŘELA, ABY JIM NEVADIL DÉŠŤ ANI SLUNCE.",
+    kamaradi:[KAM_50(400)] },
+  { typ:"cteni", otazka:"Z ČEHO SE UDĚLALA VRATA?",
+    volby:["ZE STARÝCH PRKEN","Z ČOKOLÁDY","ZE SKLA"], spravne:0, krajina:"stavba4" },
+  { typ:"cteni", otazka:"PROČ MUSÍ BÝT VRATA TAK VELKÁ?",
+    volby:["ABY PROJEL DĚDŮV ZETOR","ABY BYLA VIDĚT Z TÝNCE","ABY FOUKALO"], spravne:0, krajina:"stavba4" },
+  { typ:"pismena", slovo:"VRATA", napoveda:"CO STODOLE CHYBĚLO ÚPLNĚ NAKONEC?" }
+]},
+{ ikona:"🎉", stitek:"OSLAVA", nazev:"10. OSLAVA NOVÉ STODOLY", kroky:[
+  { typ:"povidka", krajina:"stavba4", text:
+    "STODOLA JE HOTOVÁ! NA STŘEŠE SE POŘÁD HOUPE OZDOBENÝ STROMEČEK.\nZETOR 25 ZATROUBIL NA KAMARÁDY, TENTOKRÁT RADOSTÍ.\nPAK ŘEKL: DĚKUJU VÁM. SÁM BYCH TO NIKDY NEDOKÁZAL.\nMALÝ TZ SE ZASMÁL: A BEZ TEBE BYCHOM NEVĚDĚLI, KOMU POMOCT.\nNOVÁ STODOLA JE TAK VELKÁ, ŽE SE DO NÍ VEJDOU VŠICHNI TŘI.\nAŽ ZASE PŘIJDE BOUŘKA, KAMARÁDI BUDOU MÍT KDE SPÁT.",
+    kamaradi:[KAM_TZ(300), KAM_50(440)] },
+  { typ:"cteni", otazka:"KOLIK TRAKTORŮ SE VEJDE DO NOVÉ STODOLY?",
+    volby:["VŠICHNI TŘI","JEN JEDEN","ŽÁDNÝ"], spravne:0, krajina:"stavba4" },
+  { typ:"poctyPsani", a:3, b:7, op:"+", text:"NA STAVBĚ POMÁHALY 3 TRAKTORY\nA 7 TESAŘŮ.\nKOLIK POMOCNÍKŮ BYLO CELKEM?" },
+  { typ:"pismena", slovo:"KAMARÁD", napoveda:"KDO POMŮŽE, KDYŽ TO SÁM NEZVLÁDNEŠ?" }
+]}
+];
+const KARTA_PARTA = [
+  "ZETOR 25 MÁ DVA VÁLCE A 25 KONÍ.",
+  "TZ-4K-14 MÁ JEDEN VÁLEC A 13 KONÍ.",
+  "ZETOR 50 SUPER MÁ ČTYŘI VÁLCE A 50 KONÍ.",
+  "VŠICHNI TŘI DOHROMADY MAJÍ 88 KONÍ.",
+  "STODOLA SE STAVÍ OD ZÁKLADŮ PŘES KOSTRU A STŘECHU AŽ PO VRATA."
+];
+
+/* ==================================================================
    ROZCESTNÍK — registr úrovní
    ================================================================== */
 const UROVNE = [
@@ -828,7 +1012,11 @@ const UROVNE = [
     dojezdNadpis:"HOTOVO! TZ JEDE DO DÍLNY" },
   { klic:"u3", ikona:"👴", nazev:"ZETOR 50 SUPER", podnazev:"Dědův traktor", model:"zetor",
     etapy: ETAPY_U3, nazevKarty:"ZETOR 50 SUPER", karta: KARTA_50, kartaHlas: KARTA_50_HLAS,
-    dojezdNadpis:"HOTOVO! DĚDŮV TRAKTOR JE DOMA" }
+    dojezdNadpis:"HOTOVO! DĚDŮV TRAKTOR JE DOMA" },
+  { klic:"u4", ikona:"🏗️", nazev:"NOVÁ STODOLA", podnazev:"Zetor volá kamarády", model:"zetor",
+    lak:"#b5342a", dlouheTexty:true, bezHlasu:true, finaleKrajina:"stavba4",
+    etapy: ETAPY_U4, nazevKarty:"PARTA TRAKTORŮ", karta: KARTA_PARTA,
+    dojezdNadpis:"HOTOVO! ZETOR JEDE DO NOVÉ STODOLY" }
 ];
 
 /* ==================================================================
@@ -879,6 +1067,7 @@ const nadpisEl = document.getElementById("nadpis");
 const cestaEl = document.getElementById("cesta");
 const btnZnovu = document.getElementById("btn-znovu");
 const btnDomu = document.getElementById("btn-domu");
+const btnHlas = document.getElementById("btn-hlas");
 
 function aktivniUroven(){ return UROVNE.find(u=>u.klic === state.uroven); }
 function modelAktivni(){ return aktivniUroven().model; }
@@ -904,6 +1093,7 @@ const KROKY = {};
 function kresli(){
   stage.innerHTML = "";
   if(state.uroven === null){
+    btnHlas.style.display = "";
     btnZnovu.style.display = "none";
     btnDomu.style.display = "none";
     cestaEl.style.display = "none";
@@ -916,6 +1106,7 @@ function kresli(){
   cestaEl.style.display = "flex";
   kresliCestu();
   const u = aktivniUroven(), s = S();
+  btnHlas.style.display = u.bezHlasu ? "none" : "";
   if(s.etapa >= u.etapy.length) return finale();
   const e = u.etapy[s.etapa], k = e.kroky[s.krok];
   nadpisEl.textContent = e.nazev;
@@ -966,9 +1157,12 @@ function plochaEl(html, vb){
 
 /* ---------- 1) příběhový panel ---------- */
 KROKY.povidka = function(k){
-  const obr = plochaEl(svgKrajina(k.krajina) +
+  const kamaradi = (k.kamaradi || []).map(f=>
+    traktorVe(k.krajina, f.x, f.sc, null, f.model, lakModelu(f.model, f.lak))).join("");
+  const obr = plochaEl(svgKrajina(k.krajina) + kamaradi +
     traktorVe(k.krajina, 110, .46, null, modelAktivni()), "0 0 1000 300");
   const p = document.createElement("div"); p.className = "povidka"; p.textContent = k.text;
+  if(aktivniUroven().dlouheTexty){ obr.classList.add("nizka"); p.classList.add("dlouha"); }
   const b = document.createElement("button");
   b.className = "dal"; b.textContent = "DÁL ▶";
   b.onclick = ()=>{ zvuk.klik(); dalsiKrok(); };
@@ -1285,12 +1479,27 @@ KROKY.pole = function(k){
   prekresli();
 };
 
-/* ---------- 10) sběr přepravek / beden ---------- */
+/* ---------- 10) sběr přepravek / beden / prken / tašek ---------- */
+function hromadka(naklad, x, y){
+  if(naklad === "prkna")
+    return [0,1,2,3].map(j=>`<rect x="${x}" y="${y-12-j*11}" width="84" height="10" rx="2"
+      fill="${j%2 ? "#b98a52" : "#a0743f"}" stroke="#6b4a26" stroke-width="2"/>`).join("");
+  if(naklad === "tasky")
+    return `<rect x="${x}" y="${y-8}" width="84" height="8" fill="#8a6236"/>` +
+      [0,1,2].map(j=>`<rect x="${x+4}" y="${y-19-j*12}" width="76" height="11" rx="5"
+        fill="#b5342a" stroke="#7a2019" stroke-width="2"/>`).join("");
+  return `<rect x="${x}" y="${y-46}" width="84" height="46" rx="6"
+            fill="#c98f45" stroke="#6b4a26" stroke-width="4"/>
+    ${[0,1,2,3,4,5].map(j=>{ const cx = x+15+(j%3)*27, cy = y-36+Math.floor(j/3)*20;
+      return `<circle cx="${cx}" cy="${cy}" r="10" fill="#6a3d7a"/>
+              <circle cx="${cx-3}" cy="${cy-3}" r="3" fill="#8a5a9a"/>`;}).join("")}`;
+}
 KROKY.sber = function(k){
   const s = S(), model = modelAktivni();
   const n = k.pocet, nalozene = new Array(n).fill(false);
   const kraj = k.krajina || "vinohrad";
   const nastroj = k.vlecka || "vlecka";
+  const naklad = k.naklad || "hrozny";
   const z = document.createElement("div"); z.className = "zadani"; z.textContent = k.popis;
   const plocha = document.createElement("div"); plocha.className = "plocha";
   usadPomer(plocha, "0 0 1000 300");
@@ -1303,11 +1512,7 @@ KROKY.sber = function(k){
       if(nalozene[i]) continue;
       const x = 40 + i*104, y = 292;
       bedny += `<g class="cil" data-bedna="${i}">
-        <rect x="${x}" y="${y-46}" width="84" height="46" rx="6"
-              fill="#c98f45" stroke="#6b4a26" stroke-width="4"/>
-        ${[0,1,2,3,4,5].map(j=>{ const cx = x+15+(j%3)*27, cy = y-36+Math.floor(j/3)*20;
-          return `<circle cx="${cx}" cy="${cy}" r="10" fill="#6a3d7a"/>
-                  <circle cx="${cx-3}" cy="${cy-3}" r="3" fill="#8a5a9a"/>`;}).join("")}
+        ${hromadka(naklad, x, y)}
         <rect x="${x-6}" y="${y-52}" width="96" height="58" fill="#fff" opacity="0" pointer-events="all"/>
       </g>`;
     }
@@ -1317,8 +1522,12 @@ KROKY.sber = function(k){
     let naVlecce = "";
     for(let i=0;i<nalozenoKusu;i++){
       const x = 314 + (i%3)*26, y = 182 - Math.floor(i/3)*24;
-      naVlecce += `<rect x="${x}" y="${y}" width="24" height="20" rx="3" fill="#c98f45" stroke="#6b4a26" stroke-width="2"/>
-                   <circle cx="${x+12}" cy="${y-4}" r="6" fill="#6a3d7a"/>`;
+      naVlecce += naklad === "prkna"
+        ? `<rect x="${x-2}" y="${y+8}" width="28" height="12" rx="2" fill="#b98a52" stroke="#6b4a26" stroke-width="2"/>`
+        : naklad === "tasky"
+        ? `<rect x="${x}" y="${y+6}" width="24" height="14" rx="3" fill="#b5342a" stroke="#7a2019" stroke-width="2"/>`
+        : `<rect x="${x}" y="${y}" width="24" height="20" rx="3" fill="#c98f45" stroke="#6b4a26" stroke-width="2"/>
+           <circle cx="${x+12}" cy="${y-4}" r="6" fill="#6a3d7a"/>`;
     }
     plocha.innerHTML = obal(
       svgKrajina(kraj) +
@@ -1339,8 +1548,9 @@ KROKY.sber = function(k){
 function finale(){
   const u = aktivniUroven(), model = modelAktivni();
   nadpisEl.textContent = u.dojezdNadpis;
-  const plocha = plochaEl(svgKrajina("statek") +
-    traktorVe("statek", 30, .62, "fin", model), "0 0 1000 300");
+  const kraj = u.finaleKrajina || "statek";
+  const plocha = plochaEl(svgKrajina(kraj) +
+    traktorVe(kraj, 30, .62, "fin", model), "0 0 1000 300");
   stage.append(plocha);
   const t = plocha.querySelector("#fin");
   t.style.transition = "transform 4s ease-in-out";
@@ -1365,7 +1575,7 @@ function finale(){
 
 /* ---------- ovládání ---------- */
 function znovu(){
-  state.postup[state.uroven] = vychoziPostup();
+  state.postup[state.uroven] = vychoziPostup(aktivniUroven());
   uloz(); kresli();
 }
 function domu(){
